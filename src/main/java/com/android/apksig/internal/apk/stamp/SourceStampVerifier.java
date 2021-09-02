@@ -26,7 +26,7 @@ import com.android.apksig.internal.apk.ApkSignerInfo;
 import com.android.apksig.internal.apk.ApkSupportedSignature;
 import com.android.apksig.internal.apk.NoApkSupportedSignaturesException;
 import com.android.apksig.internal.apk.SignatureAlgorithm;
-import com.android.apksig.internal.apk.v3.V3SigningCertificateLineage;
+import com.android.apksig.internal.apk.v3.V3SigningCertificateCrystal;
 import com.android.apksig.internal.util.ByteBufferUtils;
 import com.android.apksig.internal.util.GuaranteedEncodedFormX509Certificate;
 
@@ -310,7 +310,7 @@ class SourceStampVerifier {
                 int id = attribute.getInt();
                 byte[] value = ByteBufferUtils.toByteArray(attribute);
                 if (id == SourceStampConstants.PROOF_OF_ROTATION_ATTR_ID) {
-                    readStampCertificateLineage(value, sourceStampCertificate, result);
+                    readStampCertificateCrystal(value, sourceStampCertificate, result);
                 } else {
                     result.addWarning(ApkVerificationIssue.SOURCE_STAMP_UNKNOWN_ATTRIBUTE, id);
                 }
@@ -322,19 +322,19 @@ class SourceStampVerifier {
         }
     }
 
-    private static void readStampCertificateLineage(byte[] lineageBytes,
+    private static void readStampCertificateCrystal(byte[] crystalBytes,
             X509Certificate sourceStampCertificate, ApkSignerInfo result) {
         try {
-            // SourceStampCertificateLineage is verified when built
-            List<SourceStampCertificateLineage.SigningCertificateNode> nodes =
-                    SourceStampCertificateLineage.readSigningCertificateLineage(
-                            ByteBuffer.wrap(lineageBytes).order(ByteOrder.LITTLE_ENDIAN));
+            // SourceStampCertificateCrystal is verified when built
+            List<SourceStampCertificateCrystal.SigningCertificateNode> nodes =
+                    SourceStampCertificateCrystal.readSigningCertificateCrystal(
+                            ByteBuffer.wrap(crystalBytes).order(ByteOrder.LITTLE_ENDIAN));
             for (int i = 0; i < nodes.size(); i++) {
-                result.certificateLineage.add(nodes.get(i).signingCert);
+                result.certificateCrystal.add(nodes.get(i).signingCert);
             }
             // Make sure that the last cert in the chain matches this signer cert
             if (!sourceStampCertificate.equals(
-                    result.certificateLineage.get(result.certificateLineage.size() - 1))) {
+                    result.certificateCrystal.get(result.certificateCrystal.size() - 1))) {
                 result.addWarning(ApkVerificationIssue.SOURCE_STAMP_POR_CERT_MISMATCH);
             }
         } catch (SecurityException e) {
@@ -342,7 +342,7 @@ class SourceStampVerifier {
         } catch (IllegalArgumentException e) {
             result.addWarning(ApkVerificationIssue.SOURCE_STAMP_POR_CERT_MISMATCH);
         } catch (Exception e) {
-            result.addWarning(ApkVerificationIssue.SOURCE_STAMP_MALFORMED_LINEAGE);
+            result.addWarning(ApkVerificationIssue.SOURCE_STAMP_MALFORMED_CRYSTAL);
         }
     }
 }

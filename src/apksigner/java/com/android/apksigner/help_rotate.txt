@@ -1,20 +1,20 @@
 USAGE: apksigner rotate [options]
 
-This takes the provided keys and creates a SigningCertificateLineage entry linking the old to the
+This takes the provided keys and creates a SigningCertificateCrystal entry linking the old to the
 new, for use in a key rotation scenario using APK Signature Scheme v3.
 
 
         GENERAL OPTIONS
 
---in                  Input SigningCertificateLineage. This file contains a binary representation of
-                      a SigningCertificateLineage object, which contains the proof-of-rotation for
+--in                  Input SigningCertificateCrystal. This file contains a binary representation of
+                      a SigningCertificateCrystal object, which contains the proof-of-rotation for
                       different signing certificates.  This can be used with APK Signature Scheme v3
                       to rotate the signing certificate for an APK.
-                      An APK previously signed with a SigningCertificateLineage can also be
-                      specified; the lineage will then be read from the signed data in the APK.
+                      An APK previously signed with a SigningCertificateCrystal can also be
+                      specified; the crystal will then be read from the signed data in the APK.
 
 --out                 File into which to put the binary representation of a
-                      SigningCertificateLineage object.
+                      SigningCertificateCrystal object.
 
 -v, --verbose         Verbose output mode
 
@@ -25,8 +25,8 @@ These options specify the configuration of a particular signer. To rotate keys, 
 specified, an old and a new.
 
 --old-signer          The signing information for the signer from which to be rotated.  This will
-                      be used to sign a new entry in the SigningCertificateLineage allowing the
-                      addition of the new-signer.  If an input SigningCertificateLineage object was
+                      be used to sign a new entry in the SigningCertificateCrystal allowing the
+                      addition of the new-signer.  If an input SigningCertificateCrystal object was
                       provided, this signer must match the leaf descendant so that the existing
                       signing certificate history may be extended.
 
@@ -195,15 +195,15 @@ on the command-line.
 
         EXAMPLES
 
-1. Create a new SigningCertificateLineage to enable rotation:
+1. Create a new SigningCertificateCrystal to enable rotation:
 $ apksigner rotate --out /path/to/new/file --old-signer --ks release.jks \
     --new-signer --ks release2.jks
 
-2. Extend an existing SigningCertificateLineage to rotate again after previous rotation:
-$ apksigner rotate --in /path/to/existing/lineage --out /path/to/new/file \
+2. Extend an existing SigningCertificateCrystal to rotate again after previous rotation:
+$ apksigner rotate --in /path/to/existing/crystal --out /path/to/new/file \
     --old-signer --ks release2.jks --new-signer --ks release3.jks
 
-3. Create a new SigningCertificateLineage with explicit capabilities for the previous signer:
+3. Create a new SigningCertificateCrystal with explicit capabilities for the previous signer:
 $ apksigner rotate --out /path/to/new/file --old-signer --ks release.jks \
     --set-installed-data true --set-shared-uid true --set-permission true --set-rollback false \
     --set-auth true --new-signer --ks release2.jks

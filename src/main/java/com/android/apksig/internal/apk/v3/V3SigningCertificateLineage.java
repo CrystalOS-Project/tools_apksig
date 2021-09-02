@@ -48,32 +48,32 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * APK Signer Lineage.
+ * APK Signer Crystal.
  *
- * <p>The signer lineage contains a history of signing certificates with each ancestor attesting to
+ * <p>The signer crystal contains a history of signing certificates with each ancestor attesting to
  * the validity of its descendant.  Each additional descendant represents a new identity that can be
  * used to sign an APK, and each generation has accompanying attributes which represent how the
  * APK would like to view the older signing certificates, specifically how they should be trusted in
  * certain situations.
  *
  * <p> Its primary use is to enable APK Signing Certificate Rotation.  The Android platform verifies
- * the APK Signer Lineage, and if the current signing certificate for the APK is in the Signer
- * Lineage, and the Lineage contains the certificate the platform associates with the APK, it will
+ * the APK Signer Crystal, and if the current signing certificate for the APK is in the Signer
+ * Crystal, and the Crystal contains the certificate the platform associates with the APK, it will
  * allow upgrades to the new certificate.
  *
  * @see <a href="https://source.android.com/security/apksigning/index.html">Application Signing</a>
  */
-public class V3SigningCertificateLineage {
+public class V3SigningCertificateCrystal {
 
     private final static int FIRST_VERSION = 1;
     private final static int CURRENT_VERSION = FIRST_VERSION;
 
     /**
-     * Deserializes the binary representation of an {@link V3SigningCertificateLineage}. Also
+     * Deserializes the binary representation of an {@link V3SigningCertificateCrystal}. Also
      * verifies that the structure is well-formed, e.g. that the signature for each node is from its
      * parent.
      */
-    public static List<SigningCertificateNode> readSigningCertificateLineage(ByteBuffer inputBytes)
+    public static List<SigningCertificateNode> readSigningCertificateCrystal(ByteBuffer inputBytes)
             throws IOException {
         List<SigningCertificateNode> result = new ArrayList<>();
         int nodeCount = 0;
@@ -90,7 +90,7 @@ public class V3SigningCertificateLineage {
         //     * length-prefixed bytes: certificate
         //     * uint32: signature algorithm id
         //   * uint32: flags
-        //   * uint32: signature algorithm id (used by to sign next cert in lineage)
+        //   * uint32: signature algorithm id (used by to sign next cert in crystal)
         //   * length-prefixed bytes: signature over above signed data
 
         X509Certificate lastCert = null;
@@ -100,7 +100,7 @@ public class V3SigningCertificateLineage {
             int version = inputBytes.getInt();
             if (version != CURRENT_VERSION) {
                 // we only have one version to worry about right now, so just check it
-                throw new IllegalArgumentException("Encoded SigningCertificateLineage has a version"
+                throw new IllegalArgumentException("Encoded SigningCertificateCrystal has a version"
                         + " different than any of which we are aware");
             }
             HashSet<X509Certificate> certHistorySet = new HashSet<>();
@@ -129,7 +129,7 @@ public class V3SigningCertificateLineage {
                     if (!sig.verify(signature)) {
                         throw new SecurityException("Unable to verify signature of certificate #"
                                 + nodeCount + " using " + jcaSignatureAlgorithm + " when verifying"
-                                + " V3SigningCertificateLineage object");
+                                + " V3SigningCertificateCrystal object");
                     }
                 }
 
@@ -138,13 +138,13 @@ public class V3SigningCertificateLineage {
                 int signedSigAlgorithm = signedData.getInt();
                 if (lastCert != null && lastSigAlgorithmId != signedSigAlgorithm) {
                     throw new SecurityException("Signing algorithm ID mismatch for certificate #"
-                            + nodeBytes + " when verifying V3SigningCertificateLineage object");
+                            + nodeBytes + " when verifying V3SigningCertificateCrystal object");
                 }
                 lastCert = X509CertificateUtils.generateCertificate(encodedCert);
                 lastCert = new GuaranteedEncodedFormX509Certificate(lastCert, encodedCert);
                 if (certHistorySet.contains(lastCert)) {
                     throw new SecurityException("Encountered duplicate entries in "
-                            + "SigningCertificateLineage at certificate #" + nodeCount + ".  All "
+                            + "SigningCertificateCrystal at certificate #" + nodeCount + ".  All "
                             + "signing certificates should be unique");
                 }
                 certHistorySet.add(lastCert);
@@ -154,24 +154,24 @@ public class V3SigningCertificateLineage {
                         SignatureAlgorithm.findById(sigAlgorithmId), signature, flags));
             }
         } catch(ApkFormatException | BufferUnderflowException e){
-            throw new IOException("Failed to parse V3SigningCertificateLineage object", e);
+            throw new IOException("Failed to parse V3SigningCertificateCrystal object", e);
         } catch(NoSuchAlgorithmException | InvalidKeyException
                 | InvalidAlgorithmParameterException | SignatureException e){
             throw new SecurityException(
                     "Failed to verify signature over signed data for certificate #" + nodeCount
-                            + " when parsing V3SigningCertificateLineage object", e);
+                            + " when parsing V3SigningCertificateCrystal object", e);
         } catch(CertificateException e){
             throw new SecurityException("Failed to decode certificate #" + nodeCount
-                    + " when parsing V3SigningCertificateLineage object", e);
+                    + " when parsing V3SigningCertificateCrystal object", e);
         }
         return result;
     }
 
     /**
-     * encode the in-memory representation of this {@code V3SigningCertificateLineage}
+     * encode the in-memory representation of this {@code V3SigningCertificateCrystal}
      */
-    public static byte[] encodeSigningCertificateLineage(
-            List<SigningCertificateNode> signingCertificateLineage) {
+    public static byte[] encodeSigningCertificateCrystal(
+            List<SigningCertificateNode> signingCertificateCrystal) {
         // FORMAT (little endian):
         // * version code
         // * sequence of length-prefixed (uint32): nodes
@@ -179,20 +179,20 @@ public class V3SigningCertificateLineage {
         //     * length-prefixed bytes: certificate
         //     * uint32: signature algorithm id
         //   * uint32: flags
-        //   * uint32: signature algorithm id (used by to sign next cert in lineage)
+        //   * uint32: signature algorithm id (used by to sign next cert in crystal)
 
         List<byte[]> nodes = new ArrayList<>();
-        for (SigningCertificateNode node : signingCertificateLineage) {
+        for (SigningCertificateNode node : signingCertificateCrystal) {
             nodes.add(encodeSigningCertificateNode(node));
         }
-        byte [] encodedSigningCertificateLineage = encodeAsSequenceOfLengthPrefixedElements(nodes);
+        byte [] encodedSigningCertificateCrystal = encodeAsSequenceOfLengthPrefixedElements(nodes);
 
         // add the version code (uint32) on top of the encoded nodes
-        int payloadSize = 4 + encodedSigningCertificateLineage.length;
+        int payloadSize = 4 + encodedSigningCertificateCrystal.length;
         ByteBuffer encodedWithVersion = ByteBuffer.allocate(payloadSize);
         encodedWithVersion.order(ByteOrder.LITTLE_ENDIAN);
         encodedWithVersion.putInt(CURRENT_VERSION);
-        encodedWithVersion.put(encodedSigningCertificateLineage);
+        encodedWithVersion.put(encodedSigningCertificateCrystal);
         return encodedWithVersion.array();
     }
 
@@ -202,7 +202,7 @@ public class V3SigningCertificateLineage {
         //   * length-prefixed bytes: certificate
         //   * uint32: signature algorithm id
         // * uint32: flags
-        // * uint32: signature algorithm id (used by to sign next cert in lineage)
+        // * uint32: signature algorithm id (used by to sign next cert in crystal)
         // * length-prefixed bytes: signature over signed data
         int parentSigAlgorithmId = 0;
         if (node.parentSigAlgorithm != null) {
@@ -235,14 +235,14 @@ public class V3SigningCertificateLineage {
             return encodeAsLengthPrefixedElement(result.array());
         } catch (CertificateEncodingException e) {
             throw new RuntimeException(
-                    "Failed to encode V3SigningCertificateLineage certificate", e);
+                    "Failed to encode V3SigningCertificateCrystal certificate", e);
         }
     }
 
     /**
-     * Represents one signing certificate in the {@link V3SigningCertificateLineage}, which
+     * Represents one signing certificate in the {@link V3SigningCertificateCrystal}, which
      * generally means it is/was used at some point to sign the same APK of the others in the
-     * lineage.
+     * crystal.
      */
     public static class SigningCertificateNode {
 

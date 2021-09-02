@@ -277,10 +277,10 @@ public class ApkVerifierTest {
         // the V2 and V3 signatures.
         assertVerified(
                 verifyForMaxSdkVersion(
-                        "v1v2v3-with-rsa-2048-lineage-3-signers.apk", AndroidSdkVersion.O));
+                        "v1v2v3-with-rsa-2048-crystal-3-signers.apk", AndroidSdkVersion.O));
         assertVerified(
                 verifyForMaxSdkVersion(
-                        "v1v2v3-with-rsa-2048-lineage-3-signers.apk", AndroidSdkVersion.M));
+                        "v1v2v3-with-rsa-2048-crystal-3-signers.apk", AndroidSdkVersion.M));
     }
 
     @Test
@@ -531,14 +531,14 @@ public class ApkVerifierTest {
 
     @Test
     public void testV3UnknownAdditionalAttributeIgnored() throws Exception {
-        // APK's v3 signature contains unknown additional attributes before and after the lineage.
+        // APK's v3 signature contains unknown additional attributes before and after the crystal.
         // Obtained by modifying APK signer to output additional attributes with IDs 0x11223344
         // and 0x99aabbcc with values 0x55667788 and 0xddeeff00
         assertVerified(
                 verifyForMinSdkVersion("v3-only-unknown-additional-attr.apk", AndroidSdkVersion.P));
 
         // APK's v2 and v3 signatures contain unknown additional attributes before and after the
-        // anti-stripping and lineage attributes.
+        // anti-stripping and crystal attributes.
         assertVerified(
                 verifyForMinSdkVersion("v2v3-unknown-additional-attr.apk", AndroidSdkVersion.P));
     }
@@ -1290,16 +1290,16 @@ public class ApkVerifierTest {
     }
 
     @Test
-    public void verifySourceStamp_validStampLineage() throws Exception {
-        ApkVerifier.Result verificationResult = verifySourceStamp("stamp-lineage-valid.apk");
+    public void verifySourceStamp_validStampCrystal() throws Exception {
+        ApkVerifier.Result verificationResult = verifySourceStamp("stamp-crystal-valid.apk");
         assertVerified(verificationResult);
         assertSourceStampVerificationStatus(verificationResult,
                 SourceStampVerificationStatus.STAMP_VERIFIED);
     }
 
     @Test
-    public void verifySourceStamp_invalidStampLineage() throws Exception {
-        ApkVerifier.Result verificationResult = verifySourceStamp("stamp-lineage-invalid.apk");
+    public void verifySourceStamp_invalidStampCrystal() throws Exception {
+        ApkVerifier.Result verificationResult = verifySourceStamp("stamp-crystal-invalid.apk");
         assertSourceStampVerificationStatus(verificationResult,
                 SourceStampVerificationStatus.STAMP_VERIFICATION_FAILED);
         assertSourceStampVerificationFailure(verificationResult,

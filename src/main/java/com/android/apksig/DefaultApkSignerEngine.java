@@ -101,9 +101,9 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
     private final String mCreatedBy;
     private final List<SignerConfig> mSignerConfigs;
     private final SignerConfig mSourceStampSignerConfig;
-    private final SigningCertificateLineage mSourceStampSigningCertificateLineage;
+    private final SigningCertificateCrystal mSourceStampSigningCertificateCrystal;
     private final int mMinSdkVersion;
-    private final SigningCertificateLineage mSigningCertificateLineage;
+    private final SigningCertificateCrystal mSigningCertificateCrystal;
 
     private List<byte[]> mPreservedV2Signers = Collections.emptyList();
     private List<Pair<byte[], Integer>> mPreservedSignatureBlocks = Collections.emptyList();
@@ -182,7 +182,7 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
     private DefaultApkSignerEngine(
             List<SignerConfig> signerConfigs,
             SignerConfig sourceStampSignerConfig,
-            SigningCertificateLineage sourceStampSigningCertificateLineage,
+            SigningCertificateCrystal sourceStampSigningCertificateCrystal,
             int minSdkVersion,
             boolean v1SigningEnabled,
             boolean v2SigningEnabled,
@@ -191,7 +191,7 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
             boolean debuggableApkPermitted,
             boolean otherSignersSignaturesPreserved,
             String createdBy,
-            SigningCertificateLineage signingCertificateLineage)
+            SigningCertificateCrystal signingCertificateCrystal)
             throws InvalidKeyException {
         if (signerConfigs.isEmpty()) {
             throw new IllegalArgumentException("At least one signer config must be provided");
@@ -209,9 +209,9 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
         mCreatedBy = createdBy;
         mSignerConfigs = signerConfigs;
         mSourceStampSignerConfig = sourceStampSignerConfig;
-        mSourceStampSigningCertificateLineage = sourceStampSigningCertificateLineage;
+        mSourceStampSigningCertificateCrystal = sourceStampSigningCertificateCrystal;
         mMinSdkVersion = minSdkVersion;
-        mSigningCertificateLineage = signingCertificateLineage;
+        mSigningCertificateCrystal = signingCertificateCrystal;
 
         if (v1SigningEnabled) {
             if (v3SigningEnabled) {
@@ -222,14 +222,14 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
 
                 // in the event of signing certificate changes, make sure we have the oldest in the
                 // signing history to sign with v1
-                if (signingCertificateLineage != null) {
-                    SigningCertificateLineage subLineage =
-                            signingCertificateLineage.getSubLineage(
+                if (signingCertificateCrystal != null) {
+                    SigningCertificateCrystal subCrystal =
+                            signingCertificateCrystal.getSubCrystal(
                                     oldestConfig.mCertificates.get(0));
-                    if (subLineage.size() != 1) {
+                    if (subCrystal.size() != 1) {
                         throw new IllegalArgumentException(
                                 "v1 signing enabled but the oldest signer in the"
-                                    + " SigningCertificateLineage is missing.  Please provide the"
+                                    + " SigningCertificateCrystal is missing.  Please provide the"
                                     + " oldest signer to enable v1 signing");
                     }
                 }
@@ -305,13 +305,13 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
 
             // first make sure that if we have signing certificate history that the oldest signer
             // corresponds to the oldest ancestor
-            if (mSigningCertificateLineage != null) {
-                SigningCertificateLineage subLineage =
-                        mSigningCertificateLineage.getSubLineage(oldestConfig.mCertificates.get(0));
-                if (subLineage.size() != 1) {
+            if (mSigningCertificateCrystal != null) {
+                SigningCertificateCrystal subCrystal =
+                        mSigningCertificateCrystal.getSubCrystal(oldestConfig.mCertificates.get(0));
+                if (subCrystal.size() != 1) {
                     throw new IllegalArgumentException(
                             "v2 signing enabled but the oldest signer in"
-                                    + " the SigningCertificateLineage is missing.  Please provide"
+                                    + " the SigningCertificateCrystal is missing.  Please provide"
                                     + " the oldest signer to enable v2 signing.");
                 }
             }
@@ -358,9 +358,9 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
                 config.maxSdkVersion = currentMinSdk - 1;
             }
             config.minSdkVersion = getMinSdkFromV3SignatureAlgorithms(config.signatureAlgorithms);
-            if (mSigningCertificateLineage != null) {
-                config.mSigningCertificateLineage =
-                        mSigningCertificateLineage.getSubLineage(config.certificates.get(0));
+            if (mSigningCertificateCrystal != null) {
+                config.mSigningCertificateCrystal =
+                        mSigningCertificateCrystal.getSubCrystal(config.certificates.get(0));
             }
             // we know that this config will be used, so add it to our result, order doesn't matter
             // at this point (and likely only one will be needed
@@ -406,8 +406,8 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
                 mSourceStampSignerConfig,
                 /* apkSigningBlockPaddingSupported= */ false,
                 ApkSigningBlockUtils.VERSION_SOURCE_STAMP);
-        if (mSourceStampSigningCertificateLineage != null) {
-            config.mSigningCertificateLineage = mSourceStampSigningCertificateLineage.getSubLineage(
+        if (mSourceStampSigningCertificateCrystal != null) {
+            config.mSigningCertificateCrystal = mSourceStampSigningCertificateCrystal.getSubCrystal(
                     config.certificates.get(0));
         }
         return config;
@@ -1624,7 +1624,7 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
     public static class Builder {
         private List<SignerConfig> mSignerConfigs;
         private SignerConfig mStampSignerConfig;
-        private SigningCertificateLineage mSourceStampSigningCertificateLineage;
+        private SigningCertificateCrystal mSourceStampSigningCertificateCrystal;
         private final int mMinSdkVersion;
 
         private boolean mV1SigningEnabled = true;
@@ -1635,12 +1635,12 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
         private boolean mOtherSignersSignaturesPreserved;
         private String mCreatedBy = "1.0 (Android)";
 
-        private SigningCertificateLineage mSigningCertificateLineage;
+        private SigningCertificateCrystal mSigningCertificateCrystal;
 
         // APK Signature Scheme v3 only supports a single signing certificate, so to move to v3
         // signing by default, but not require prior clients to update to explicitly disable v3
         // signing for multiple signers, we modify the mV3SigningEnabled depending on the provided
-        // inputs (multiple signers and mSigningCertificateLineage in particular).  Maintain two
+        // inputs (multiple signers and mSigningCertificateCrystal in particular).  Maintain two
         // extra variables to record whether or not mV3SigningEnabled has been set directly by a
         // client and so should override the default behavior.
         private boolean mV3SigningExplicitlyDisabled = false;
@@ -1662,7 +1662,7 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
             }
             if (signerConfigs.size() > 1) {
                 // APK Signature Scheme v3 only supports single signer, unless a
-                // SigningCertificateLineage is provided, in which case this will be reset to true,
+                // SigningCertificateCrystal is provided, in which case this will be reset to true,
                 // since we don't yet have a v4 scheme about which to worry
                 mV3SigningEnabled = false;
             }
@@ -1688,9 +1688,9 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
             }
 
             // make sure our signers are appropriately setup
-            if (mSigningCertificateLineage != null) {
+            if (mSigningCertificateCrystal != null) {
                 try {
-                    mSignerConfigs = mSigningCertificateLineage.sortSignerConfigs(mSignerConfigs);
+                    mSignerConfigs = mSigningCertificateCrystal.sortSignerConfigs(mSignerConfigs);
                     if (!mV3SigningEnabled && mSignerConfigs.size() > 1) {
 
                         // this is a strange situation: we've provided a valid rotation history, but
@@ -1698,25 +1698,25 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
                         // which signer the user intended to sign
                         throw new IllegalStateException(
                                 "Provided multiple signers which are part of the"
-                                        + " SigningCertificateLineage, but not signing with APK"
+                                        + " SigningCertificateCrystal, but not signing with APK"
                                         + " Signature Scheme v3");
                     }
                 } catch (IllegalArgumentException e) {
                     throw new IllegalStateException(
                             "Provided signer configs do not match the "
-                                    + "provided SigningCertificateLineage",
+                                    + "provided SigningCertificateCrystal",
                             e);
                 }
             } else if (mV3SigningEnabled && mSignerConfigs.size() > 1) {
                 throw new IllegalStateException(
                         "Multiple signing certificates provided for use with APK Signature Scheme"
-                                + " v3 without an accompanying SigningCertificateLineage");
+                                + " v3 without an accompanying SigningCertificateCrystal");
             }
 
             return new DefaultApkSignerEngine(
                     mSignerConfigs,
                     mStampSignerConfig,
-                    mSourceStampSigningCertificateLineage,
+                    mSourceStampSigningCertificateCrystal,
                     mMinSdkVersion,
                     mV1SigningEnabled,
                     mV2SigningEnabled,
@@ -1725,7 +1725,7 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
                     mDebuggableApkPermitted,
                     mOtherSignersSignaturesPreserved,
                     mCreatedBy,
-                    mSigningCertificateLineage);
+                    mSigningCertificateCrystal);
         }
 
         /** Sets the signer configuration for the SourceStamp to be embedded in the APK. */
@@ -1735,12 +1735,12 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
         }
 
         /**
-         * Sets the source stamp {@link SigningCertificateLineage}. This structure provides proof of
+         * Sets the source stamp {@link SigningCertificateCrystal}. This structure provides proof of
          * signing certificate rotation for certificates previously used to sign source stamps.
          */
-        public Builder setSourceStampSigningCertificateLineage(
-                SigningCertificateLineage sourceStampSigningCertificateLineage) {
-            mSourceStampSigningCertificateLineage = sourceStampSigningCertificateLineage;
+        public Builder setSourceStampSigningCertificateCrystal(
+                SigningCertificateCrystal sourceStampSigningCertificateCrystal) {
+            mSourceStampSigningCertificateCrystal = sourceStampSigningCertificateCrystal;
             return this;
         }
 
@@ -1828,15 +1828,15 @@ public class DefaultApkSignerEngine implements ApkSignerEngine {
         }
 
         /**
-         * Sets the {@link SigningCertificateLineage} to use with the v3 signature scheme. This
+         * Sets the {@link SigningCertificateCrystal} to use with the v3 signature scheme. This
          * structure provides proof of signing certificate rotation linking {@link SignerConfig}
          * objects to previous ones.
          */
-        public Builder setSigningCertificateLineage(
-                SigningCertificateLineage signingCertificateLineage) {
-            if (signingCertificateLineage != null) {
+        public Builder setSigningCertificateCrystal(
+                SigningCertificateCrystal signingCertificateCrystal) {
+            if (signingCertificateCrystal != null) {
                 mV3SigningEnabled = true;
-                mSigningCertificateLineage = signingCertificateLineage;
+                mSigningCertificateCrystal = signingCertificateCrystal;
             }
             return this;
         }

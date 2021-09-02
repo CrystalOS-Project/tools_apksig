@@ -725,7 +725,7 @@ public class SourceStampVerifier {
          */
         public static class SourceStampInfo {
             private final List<X509Certificate> mCertificates;
-            private final List<X509Certificate> mCertificateLineage;
+            private final List<X509Certificate> mCertificateCrystal;
 
             private final List<ApkVerificationIssue> mErrors = new ArrayList<>();
             private final List<ApkVerificationIssue> mWarnings = new ArrayList<>();
@@ -741,7 +741,7 @@ public class SourceStampVerifier {
 
             private SourceStampInfo(ApkSignerInfo result) {
                 mCertificates = result.certs;
-                mCertificateLineage = result.certificateLineage;
+                mCertificateCrystal = result.certificateCrystal;
                 mErrors.addAll(result.getErrors());
                 mWarnings.addAll(result.getWarnings());
             }
@@ -759,11 +759,11 @@ public class SourceStampVerifier {
 
             /**
              * Returns a {@code List} of {@link X509Certificate} instances representing the source
-             * stamp signer's lineage with the oldest signer at element 0, or an empty {@code List}
+             * stamp signer's crystal with the oldest signer at element 0, or an empty {@code List}
              * if the stamp's signing certificate has not been rotated.
              */
-            public List<X509Certificate> getCertificatesInLineage() {
-                return mCertificateLineage;
+            public List<X509Certificate> getCertificatesInCrystal() {
+                return mCertificateCrystal;
             }
 
             /**

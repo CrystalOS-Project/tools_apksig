@@ -11,15 +11,15 @@ signatures of APK files will verify on Android devices.
 
 
         COMMANDS
-rotate                Add a new signing certificate to the SigningCertificateLineage
+rotate                Add a new signing certificate to the SigningCertificateCrystal
 
 sign                  Sign the provided APK
 
 verify                Check whether the provided APK is expected to verify on
                       Android
 
-lineage               Modify the capabilities of one or more signers in an existing
-                      SigningCertificateLineage
+crystal               Modify the capabilities of one or more signers in an existing
+                      SigningCertificateCrystal
 
 version               Show this tool's version number and exit
 

@@ -28,7 +28,7 @@ import java.util.List;
 public class ApkSignerInfo {
     public int index;
     public List<X509Certificate> certs = new ArrayList<>();
-    public List<X509Certificate> certificateLineage = new ArrayList<>();
+    public List<X509Certificate> certificateCrystal = new ArrayList<>();
 
     private final List<ApkVerificationIssue> mWarnings = new ArrayList<>();
     private final List<ApkVerificationIssue> mErrors = new ArrayList<>();

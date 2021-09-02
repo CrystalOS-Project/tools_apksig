@@ -16,7 +16,7 @@
 
 package com.android.apksigner;
 
-import com.android.apksig.SigningCertificateLineage.SignerCapabilities;
+import com.android.apksig.SigningCertificateCrystal.SignerCapabilities;
 import com.android.apksig.internal.util.X509CertificateUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.File;

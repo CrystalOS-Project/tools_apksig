@@ -392,10 +392,10 @@ public class ApkVerifier {
 
         // If there is a v3 scheme signer and an earlier scheme signer, make sure that there is a
         // match, or in the event of signing certificate rotation, that the v1/v2 scheme signer
-        // matches the oldest signing certificate in the provided SigningCertificateLineage
+        // matches the oldest signing certificate in the provided SigningCertificateCrystal
         if (result.isVerifiedUsingV3Scheme()
                 && (result.isVerifiedUsingV1Scheme() || result.isVerifiedUsingV2Scheme())) {
-            SigningCertificateLineage lineage = result.getSigningCertificateLineage();
+            SigningCertificateCrystal crystal = result.getSigningCertificateCrystal();
             X509Certificate oldSignerCert;
             if (result.isVerifiedUsingV1Scheme()) {
                 List<Result.V1SchemeSignerInfo> v1Signers = result.getV1SchemeSigners();
@@ -414,7 +414,7 @@ public class ApkVerifier {
                 }
                 oldSignerCert = v2Signers.get(0).mCerts.get(0);
             }
-            if (lineage == null) {
+            if (crystal == null) {
                 // no signing certificate history with which to contend, just make sure that v3
                 // matches previous versions
                 List<Result.V3SchemeSignerInfo> v3Signers = result.getV3SchemeSigners();
@@ -437,13 +437,13 @@ public class ApkVerifier {
                 // we have some signing history, make sure that the root of the history is the same
                 // as our v1/v2 signer
                 try {
-                    lineage = lineage.getSubLineage(oldSignerCert);
-                    if (lineage.size() != 1) {
-                        // the v1/v2 signer was found, but not at the root of the lineage
+                    crystal = crystal.getSubCrystal(oldSignerCert);
+                    if (crystal.size() != 1) {
+                        // the v1/v2 signer was found, but not at the root of the crystal
                         result.addError(Issue.V3_SIG_PAST_SIGNERS_MISMATCH);
                     }
                 } catch (IllegalArgumentException e) {
-                    // the v1/v2 signer was not found in the lineage
+                    // the v1/v2 signer was not found in the crystal
                     result.addError(Issue.V3_SIG_PAST_SIGNERS_MISMATCH);
                 }
             }
@@ -1015,7 +1015,7 @@ public class ApkVerifier {
         private boolean mVerifiedUsingV4Scheme;
         private boolean mSourceStampVerified;
         private boolean mWarningsAsErrors;
-        private SigningCertificateLineage mSigningCertificateLineage;
+        private SigningCertificateCrystal mSigningCertificateCrystal;
 
         /**
          * Returns {@code true} if the APK's signatures verified.
@@ -1127,11 +1127,11 @@ public class ApkVerifier {
         }
 
         /**
-         * Returns the combined SigningCertificateLineage associated with this APK's APK Signature
+         * Returns the combined SigningCertificateCrystal associated with this APK's APK Signature
          * Scheme v3 signing block.
          */
-        public SigningCertificateLineage getSigningCertificateLineage() {
-            return mSigningCertificateLineage;
+        public SigningCertificateCrystal getSigningCertificateCrystal() {
+            return mSigningCertificateCrystal;
         }
 
         void addError(Issue msg, Object... parameters) {
@@ -1210,7 +1210,7 @@ public class ApkVerifier {
                     for (ApkSigningBlockUtils.Result.SignerInfo signer : source.signers) {
                         mV3SchemeSigners.add(new V3SchemeSignerInfo(signer));
                     }
-                    mSigningCertificateLineage = source.signingCertificateLineage;
+                    mSigningCertificateCrystal = source.signingCertificateCrystal;
                     break;
                 case ApkSigningBlockUtils.VERSION_APK_SIGNATURE_SCHEME_V4:
                     mVerifiedUsingV4Scheme = source.verified;
@@ -1637,7 +1637,7 @@ public class ApkVerifier {
             }
 
             private final List<X509Certificate> mCertificates;
-            private final List<X509Certificate> mCertificateLineage;
+            private final List<X509Certificate> mCertificateCrystal;
 
             private final List<IssueWithParams> mErrors;
             private final List<IssueWithParams> mWarnings;
@@ -1646,7 +1646,7 @@ public class ApkVerifier {
 
             private SourceStampInfo(ApkSignerInfo result) {
                 mCertificates = result.certs;
-                mCertificateLineage = result.certificateLineage;
+                mCertificateCrystal = result.certificateCrystal;
                 mErrors = ApkVerificationIssueAdapter.getIssuesFromVerificationIssues(
                         result.getErrors());
                 mWarnings = ApkVerificationIssueAdapter.getIssuesFromVerificationIssues(
@@ -1661,7 +1661,7 @@ public class ApkVerifier {
 
             SourceStampInfo(SourceStampVerificationStatus sourceStampVerificationStatus) {
                 mCertificates = Collections.emptyList();
-                mCertificateLineage = Collections.emptyList();
+                mCertificateCrystal = Collections.emptyList();
                 mErrors = Collections.emptyList();
                 mWarnings = Collections.emptyList();
                 mSourceStampVerificationStatus = sourceStampVerificationStatus;
@@ -1679,10 +1679,10 @@ public class ApkVerifier {
             }
 
             /**
-             * Returns a list containing all of the certificates in the stamp certificate lineage.
+             * Returns a list containing all of the certificates in the stamp certificate crystal.
              */
-            public List<X509Certificate> getCertificatesInLineage() {
-                return mCertificateLineage;
+            public List<X509Certificate> getCertificatesInCrystal() {
+                return mCertificateCrystal;
             }
 
             public boolean containsErrors() {
@@ -2343,7 +2343,7 @@ public class ApkVerifier {
          * or have them as the root of its signing certificate history
          */
         V3_SIG_PAST_SIGNERS_MISMATCH(
-                "v3 signer differs from v1/v2 signer without proper signing certificate lineage."),
+                "v3 signer differs from v1/v2 signer without proper signing certificate crystal."),
 
         /**
          * This APK Signature Scheme v3 signer contains a signature produced using an unknown
@@ -2477,17 +2477,17 @@ public class ApkVerifier {
                         + " Expected: <%2$s>, actual: <%3$s>"),
 
         /**
-         * The signer's SigningCertificateLineage attribute containd a proof-of-rotation record with
+         * The signer's SigningCertificateCrystal attribute containd a proof-of-rotation record with
          * signature(s) that did not verify.
          */
-        V3_SIG_POR_DID_NOT_VERIFY("SigningCertificateLineage attribute containd a proof-of-rotation"
+        V3_SIG_POR_DID_NOT_VERIFY("SigningCertificateCrystal attribute containd a proof-of-rotation"
                 + " record with signature(s) that did not verify."),
 
         /**
-         * Failed to parse the SigningCertificateLineage structure in the APK Signature Scheme v3
+         * Failed to parse the SigningCertificateCrystal structure in the APK Signature Scheme v3
          * signature's additional attributes section.
          */
-        V3_SIG_MALFORMED_LINEAGE("Failed to parse the SigningCertificateLineage structure in the "
+        V3_SIG_MALFORMED_CRYSTAL("Failed to parse the SigningCertificateCrystal structure in the "
                 + "APK Signature Scheme v3 signature's additional attributes section."),
 
         /**
@@ -2496,7 +2496,7 @@ public class ApkVerifier {
          */
         V3_SIG_POR_CERT_MISMATCH(
                 "APK signing certificate differs from the associated certificate found in the "
-                        + "signer's SigningCertificateLineage."),
+                        + "signer's SigningCertificateCrystal."),
 
         /**
          * The APK Signature Scheme v3 signers encountered do not offer a continuous set of
@@ -2519,12 +2519,12 @@ public class ApkVerifier {
                 + "versions do not cover the entire desired range.  Found min:  %1$s max %2$s"),
 
         /**
-         * The SigningCertificateLineages for different platform versions using APK Signature Scheme
+         * The SigningCertificateCrystals for different platform versions using APK Signature Scheme
          * v3 do not go together.  Specifically, each should be a subset of another, with the size
          * of each increasing as the platform level increases.
          */
-        V3_INCONSISTENT_LINEAGES("SigningCertificateLineages targeting different platform versions"
-                + " using APK Signature Scheme v3 are not all a part of the same overall lineage."),
+        V3_INCONSISTENT_CRYSTALS("SigningCertificateCrystals targeting different platform versions"
+                + " using APK Signature Scheme v3 are not all a part of the same overall crystal."),
 
         /**
          * APK Signing Block contains an unknown entry.
@@ -2800,10 +2800,10 @@ public class ApkVerifier {
         SOURCE_STAMP_UNKNOWN_ATTRIBUTE("Unknown stamp attribute: ID %1$#x"),
 
         /**
-         * Failed to parse the SigningCertificateLineage structure in the source stamp
+         * Failed to parse the SigningCertificateCrystal structure in the source stamp
          * attributes section.
          */
-        SOURCE_STAMP_MALFORMED_LINEAGE("Failed to parse the SigningCertificateLineage "
+        SOURCE_STAMP_MALFORMED_CRYSTAL("Failed to parse the SigningCertificateCrystal "
                 + "structure in the source stamp attributes section."),
 
         /**
@@ -2812,13 +2812,13 @@ public class ApkVerifier {
          */
         SOURCE_STAMP_POR_CERT_MISMATCH(
                 "APK signing certificate differs from the associated certificate found in the "
-                        + "signer's SigningCertificateLineage."),
+                        + "signer's SigningCertificateCrystal."),
 
         /**
-         * The source stamp SigningCertificateLineage attribute contains a proof-of-rotation record
+         * The source stamp SigningCertificateCrystal attribute contains a proof-of-rotation record
          * with signature(s) that did not verify.
          */
-        SOURCE_STAMP_POR_DID_NOT_VERIFY("Source stamp SigningCertificateLineage attribute "
+        SOURCE_STAMP_POR_DID_NOT_VERIFY("Source stamp SigningCertificateCrystal attribute "
                 + "contains a proof-of-rotation record with signature(s) that did not verify."),
 
         /**
@@ -3107,8 +3107,8 @@ public class ApkVerifier {
                     Issue.SOURCE_STAMP_MALFORMED_ATTRIBUTE);
             sVerificationIssueIdToIssue.put(ApkVerificationIssue.SOURCE_STAMP_UNKNOWN_ATTRIBUTE,
                     Issue.SOURCE_STAMP_UNKNOWN_ATTRIBUTE);
-            sVerificationIssueIdToIssue.put(ApkVerificationIssue.SOURCE_STAMP_MALFORMED_LINEAGE,
-                    Issue.SOURCE_STAMP_MALFORMED_LINEAGE);
+            sVerificationIssueIdToIssue.put(ApkVerificationIssue.SOURCE_STAMP_MALFORMED_CRYSTAL,
+                    Issue.SOURCE_STAMP_MALFORMED_CRYSTAL);
             sVerificationIssueIdToIssue.put(ApkVerificationIssue.SOURCE_STAMP_POR_CERT_MISMATCH,
                     Issue.SOURCE_STAMP_POR_CERT_MISMATCH);
             sVerificationIssueIdToIssue.put(ApkVerificationIssue.SOURCE_STAMP_POR_DID_NOT_VERIFY,

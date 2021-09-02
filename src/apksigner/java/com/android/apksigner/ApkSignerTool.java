@@ -18,8 +18,8 @@ package com.android.apksigner;
 
 import com.android.apksig.ApkSigner;
 import com.android.apksig.ApkVerifier;
-import com.android.apksig.SigningCertificateLineage;
-import com.android.apksig.SigningCertificateLineage.SignerCapabilities;
+import com.android.apksig.SigningCertificateCrystal;
+import com.android.apksig.SigningCertificateCrystal.SignerCapabilities;
 import com.android.apksig.apk.ApkFormatException;
 import com.android.apksig.apk.MinSdkVersionException;
 import com.android.apksig.util.DataSource;
@@ -63,7 +63,7 @@ public class ApkSignerTool {
     private static final String HELP_PAGE_SIGN = "help_sign.txt";
     private static final String HELP_PAGE_VERIFY = "help_verify.txt";
     private static final String HELP_PAGE_ROTATE = "help_rotate.txt";
-    private static final String HELP_PAGE_LINEAGE = "help_lineage.txt";
+    private static final String HELP_PAGE_CRYSTAL = "help_crystal.txt";
 
     private static MessageDigest sha256 = null;
     private static MessageDigest sha1 = null;
@@ -93,8 +93,8 @@ public class ApkSignerTool {
             } else if ("rotate".equals(cmd)) {
                 rotate(Arrays.copyOfRange(params, 1, params.length));
                 return;
-            } else if ("lineage".equals(cmd)) {
-                lineage(Arrays.copyOfRange(params, 1, params.length));
+            } else if ("crystal".equals(cmd)) {
+                crystal(Arrays.copyOfRange(params, 1, params.length));
                 return;
             } else if ("help".equals(cmd)) {
                 printUsage(HELP_PAGE_GENERAL);
@@ -147,9 +147,9 @@ public class ApkSignerTool {
         int maxSdkVersion = Integer.MAX_VALUE;
         List<SignerParams> signers = new ArrayList<>(1);
         SignerParams signerParams = new SignerParams();
-        SigningCertificateLineage lineage = null;
+        SigningCertificateCrystal crystal = null;
         SignerParams sourceStampSignerParams = new SignerParams();
-        SigningCertificateLineage sourceStampLineage = null;
+        SigningCertificateCrystal sourceStampCrystal = null;
         List<ProviderInstallSpec> providers = new ArrayList<>();
         ProviderInstallSpec providerParams = new ProviderInstallSpec();
         OptionsParser optionsParser = new OptionsParser(params);
@@ -233,9 +233,9 @@ public class ApkSignerTool {
                 signerParams.setKeyFile(optionsParser.getRequiredValue("Private key file"));
             } else if ("cert".equals(optionName)) {
                 signerParams.setCertFile(optionsParser.getRequiredValue("Certificate file"));
-            } else if ("lineage".equals(optionName)) {
-                File lineageFile = new File(optionsParser.getRequiredValue("Lineage File"));
-                lineage = getLineageFromInputFile(lineageFile);
+            } else if ("crystal".equals(optionName)) {
+                File crystalFile = new File(optionsParser.getRequiredValue("Crystal File"));
+                crystal = getCrystalFromInputFile(crystalFile);
             } else if ("v".equals(optionName) || "verbose".equals(optionName)) {
                 verbose = optionsParser.getOptionalBooleanValue(true);
             } else if ("next-provider".equals(optionName)) {
@@ -255,10 +255,10 @@ public class ApkSignerTool {
             } else if ("stamp-signer".equals(optionName)) {
                 sourceStampFlagFound = true;
                 sourceStampSignerParams = processSignerParams(optionsParser);
-            } else if ("stamp-lineage".equals(optionName)) {
-                File stampLineageFile = new File(
-                        optionsParser.getRequiredValue("Stamp Lineage File"));
-                sourceStampLineage = getLineageFromInputFile(stampLineageFile);
+            } else if ("stamp-crystal".equals(optionName)) {
+                File stampCrystalFile = new File(
+                        optionsParser.getRequiredValue("Stamp Crystal File"));
+                sourceStampCrystal = getCrystalFromInputFile(stampCrystalFile);
             } else if ("deterministic-dsa-signing".equals(optionName)) {
                 deterministicDsaSigning = optionsParser.getOptionalBooleanValue(false);
             } else if ("append-signature".equals(optionName)) {
@@ -360,7 +360,7 @@ public class ApkSignerTool {
                         .setVerityEnabled(verityEnabled)
                         .setV4ErrorReportingEnabled(v4SigningEnabled && v4SigningFlagFound)
                         .setDebuggableApkPermitted(debuggableApkPermitted)
-                        .setSigningCertificateLineage(lineage);
+                        .setSigningCertificateCrystal(crystal);
         if (minSdkVersionSpecified) {
             apkSignerBuilder.setMinSdkVersion(minSdkVersion);
         }
@@ -372,7 +372,7 @@ public class ApkSignerTool {
         }
         if (sourceStampSignerConfig != null) {
             apkSignerBuilder.setSourceStampSignerConfig(sourceStampSignerConfig)
-                    .setSourceStampSigningCertificateLineage(sourceStampLineage);
+                    .setSourceStampSigningCertificateCrystal(sourceStampCrystal);
         }
         ApkSigner apkSigner = apkSignerBuilder.build();
         try {
@@ -658,8 +658,8 @@ public class ApkSignerTool {
             return;
         }
 
-        File outputKeyLineage = null;
-        File inputKeyLineage = null;
+        File outputKeyCrystal = null;
+        File inputKeyCrystal = null;
         boolean verbose = false;
         SignerParams oldSignerParams = null;
         SignerParams newSignerParams = null;
@@ -675,9 +675,9 @@ public class ApkSignerTool {
                 printUsage(HELP_PAGE_ROTATE);
                 return;
             } else if ("out".equals(optionName)) {
-                outputKeyLineage = new File(optionsParser.getRequiredValue("Output file name"));
+                outputKeyCrystal = new File(optionsParser.getRequiredValue("Output file name"));
             } else if ("in".equals(optionName)) {
-                inputKeyLineage = new File(optionsParser.getRequiredValue("Input file name"));
+                inputKeyCrystal = new File(optionsParser.getRequiredValue("Input file name"));
             } else if ("old-signer".equals(optionName)) {
                 oldSignerParams = processSignerParams(optionsParser);
             } else if ("new-signer".equals(optionName)) {
@@ -719,8 +719,8 @@ public class ApkSignerTool {
             throw new ParameterException("Signer parameters for new signer not present");
         }
 
-        if (outputKeyLineage == null) {
-            throw new ParameterException("Output lineage file parameter not present");
+        if (outputKeyCrystal == null) {
+            throw new ParameterException("Output crystal file parameter not present");
         }
 
         params = optionsParser.getRemainingParams();
@@ -739,36 +739,36 @@ public class ApkSignerTool {
             // populate SignerConfig for old signer
             oldSignerParams.setName("old signer");
             loadPrivateKeyAndCerts(oldSignerParams, passwordRetriever);
-            SigningCertificateLineage.SignerConfig oldSignerConfig =
-                    new SigningCertificateLineage.SignerConfig.Builder(
+            SigningCertificateCrystal.SignerConfig oldSignerConfig =
+                    new SigningCertificateCrystal.SignerConfig.Builder(
                             oldSignerParams.getPrivateKey(), oldSignerParams.getCerts().get(0))
                             .build();
 
             // TOOD: don't require private key
             newSignerParams.setName("new signer");
             loadPrivateKeyAndCerts(newSignerParams, passwordRetriever);
-            SigningCertificateLineage.SignerConfig newSignerConfig =
-                    new SigningCertificateLineage.SignerConfig.Builder(
+            SigningCertificateCrystal.SignerConfig newSignerConfig =
+                    new SigningCertificateCrystal.SignerConfig.Builder(
                             newSignerParams.getPrivateKey(), newSignerParams.getCerts().get(0))
                             .build();
 
             // ok we're all set up, let's rotate!
-            SigningCertificateLineage lineage;
-            if (inputKeyLineage != null) {
+            SigningCertificateCrystal crystal;
+            if (inputKeyCrystal != null) {
                 // we already have history, add the new key to the end of it
-                lineage = getLineageFromInputFile(inputKeyLineage);
-                lineage.updateSignerCapabilities(
+                crystal = getCrystalFromInputFile(inputKeyCrystal);
+                crystal.updateSignerCapabilities(
                         oldSignerConfig, oldSignerParams.getSignerCapabilitiesBuilder().build());
-                lineage =
-                        lineage.spawnDescendant(
+                crystal =
+                        crystal.spawnDescendant(
                                 oldSignerConfig,
                                 newSignerConfig,
                                 newSignerParams.getSignerCapabilitiesBuilder().build());
             } else {
                 // this is the first entry in our signing history, create a new one from the old and
                 // new signer info
-                lineage =
-                        new SigningCertificateLineage.Builder(oldSignerConfig, newSignerConfig)
+                crystal =
+                        new SigningCertificateCrystal.Builder(oldSignerConfig, newSignerConfig)
                                 .setMinSdkVersion(minSdkVersion)
                                 .setOriginalCapabilities(
                                         oldSignerParams.getSignerCapabilitiesBuilder().build())
@@ -777,35 +777,35 @@ public class ApkSignerTool {
                                 .build();
             }
             // and write out the result
-            lineage.writeToFile(outputKeyLineage);
+            crystal.writeToFile(outputKeyCrystal);
         }
         if (verbose) {
             System.out.println("Rotation entry generated.");
         }
     }
 
-    public static void lineage(String[] params) throws Exception {
+    public static void crystal(String[] params) throws Exception {
         if (params.length == 0) {
-            printUsage(HELP_PAGE_LINEAGE);
+            printUsage(HELP_PAGE_CRYSTAL);
             return;
         }
 
         boolean verbose = false;
         boolean printCerts = false;
-        boolean lineageUpdated = false;
-        File inputKeyLineage = null;
-        File outputKeyLineage = null;
+        boolean crystalUpdated = false;
+        File inputKeyCrystal = null;
+        File outputKeyCrystal = null;
         String optionName;
         OptionsParser optionsParser = new OptionsParser(params);
         List<SignerParams> signers = new ArrayList<>(1);
         while ((optionName = optionsParser.nextOption()) != null) {
             if (("help".equals(optionName)) || ("h".equals(optionName))) {
-                printUsage(HELP_PAGE_LINEAGE);
+                printUsage(HELP_PAGE_CRYSTAL);
                 return;
             } else if ("in".equals(optionName)) {
-                inputKeyLineage = new File(optionsParser.getRequiredValue("Input file name"));
+                inputKeyCrystal = new File(optionsParser.getRequiredValue("Input file name"));
             } else if ("out".equals(optionName)) {
-                outputKeyLineage = new File(optionsParser.getRequiredValue("Output file name"));
+                outputKeyCrystal = new File(optionsParser.getRequiredValue("Output file name"));
             } else if ("signer".equals(optionName)) {
                 SignerParams signerParams = processSignerParams(optionsParser);
                 signers.add(signerParams);
@@ -819,18 +819,18 @@ public class ApkSignerTool {
                                 + ". See --help for supported options.");
             }
         }
-        if (inputKeyLineage == null) {
-            throw new ParameterException("Input lineage file parameter not present");
+        if (inputKeyCrystal == null) {
+            throw new ParameterException("Input crystal file parameter not present");
         }
-        SigningCertificateLineage lineage = getLineageFromInputFile(inputKeyLineage);
+        SigningCertificateCrystal crystal = getCrystalFromInputFile(inputKeyCrystal);
 
         try (PasswordRetriever passwordRetriever = new PasswordRetriever()) {
             for (int i = 0; i < signers.size(); i++) {
                 SignerParams signerParams = signers.get(i);
                 signerParams.setName("signer #" + (i + 1));
                 loadPrivateKeyAndCerts(signerParams, passwordRetriever);
-                SigningCertificateLineage.SignerConfig signerConfig =
-                        new SigningCertificateLineage.SignerConfig.Builder(
+                SigningCertificateCrystal.SignerConfig signerConfig =
+                        new SigningCertificateCrystal.SignerConfig.Builder(
                                 signerParams.getPrivateKey(), signerParams.getCerts().get(0))
                                 .build();
                 try {
@@ -839,12 +839,12 @@ public class ApkSignerTool {
                     // signerCapabilitiesBuilder object with potential default values is not
                     // possible. Instead the capabilities should be updated first, then the new
                     // capabilities can be compared against the original to determine if the
-                    // lineage has been updated and needs to be written out to a file.
-                    SignerCapabilities origCapabilities = lineage.getSignerCapabilities(
+                    // crystal has been updated and needs to be written out to a file.
+                    SignerCapabilities origCapabilities = crystal.getSignerCapabilities(
                             signerConfig);
-                    lineage.updateSignerCapabilities(
+                    crystal.updateSignerCapabilities(
                             signerConfig, signerParams.getSignerCapabilitiesBuilder().build());
-                    SignerCapabilities newCapabilities = lineage.getSignerCapabilities(
+                    SignerCapabilities newCapabilities = crystal.getSignerCapabilities(
                             signerConfig);
                     if (origCapabilities.equals(newCapabilities)) {
                         if (verbose) {
@@ -854,7 +854,7 @@ public class ApkSignerTool {
                                             + " are unchanged.");
                         }
                     } else {
-                        lineageUpdated = true;
+                        crystalUpdated = true;
                         if (verbose) {
                             System.out.println(
                                     "Updated signer capabilities for " + signerParams.getName()
@@ -864,50 +864,50 @@ public class ApkSignerTool {
                 } catch (IllegalArgumentException e) {
                     throw new ParameterException(
                             "The signer " + signerParams.getName()
-                                    + " was not found in the specified lineage.");
+                                    + " was not found in the specified crystal.");
                 }
             }
         }
         if (printCerts) {
-            List<X509Certificate> signingCerts = lineage.getCertificatesInLineage();
+            List<X509Certificate> signingCerts = crystal.getCertificatesInCrystal();
             for (int i = 0; i < signingCerts.size(); i++) {
                 X509Certificate signerCert = signingCerts.get(i);
-                SignerCapabilities signerCapabilities = lineage.getSignerCapabilities(signerCert);
-                printCertificate(signerCert, "Signer #" + (i + 1) + " in lineage", verbose);
+                SignerCapabilities signerCapabilities = crystal.getSignerCapabilities(signerCert);
+                printCertificate(signerCert, "Signer #" + (i + 1) + " in crystal", verbose);
                 printCapabilities(signerCapabilities);
             }
         }
-        if (lineageUpdated) {
-            if (outputKeyLineage != null) {
-                lineage.writeToFile(outputKeyLineage);
+        if (crystalUpdated) {
+            if (outputKeyCrystal != null) {
+                crystal.writeToFile(outputKeyCrystal);
                 if (verbose) {
-                    System.out.println("Updated lineage saved to " + outputKeyLineage + ".");
+                    System.out.println("Updated crystal saved to " + outputKeyCrystal + ".");
                 }
             } else {
                 throw new ParameterException(
-                        "The lineage was modified but an output file for the lineage was not "
+                        "The crystal was modified but an output file for the crystal was not "
                                 + "specified");
             }
         }
     }
 
     /**
-     * Extracts the Signing Certificate Lineage from the provided lineage or APK file.
+     * Extracts the Signing Certificate Crystal from the provided crystal or APK file.
      */
-    private static SigningCertificateLineage getLineageFromInputFile(File inputLineageFile)
+    private static SigningCertificateCrystal getCrystalFromInputFile(File inputCrystalFile)
             throws ParameterException {
-        try (RandomAccessFile f = new RandomAccessFile(inputLineageFile, "r")) {
+        try (RandomAccessFile f = new RandomAccessFile(inputCrystalFile, "r")) {
             if (f.length() < 4) {
-                throw new ParameterException("The input file is not a valid lineage file.");
+                throw new ParameterException("The input file is not a valid crystal file.");
             }
             DataSource apk = DataSources.asDataSource(f);
             int magicValue = apk.getByteBuffer(0, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
-            if (magicValue == SigningCertificateLineage.MAGIC) {
-                return SigningCertificateLineage.readFromFile(inputLineageFile);
+            if (magicValue == SigningCertificateCrystal.MAGIC) {
+                return SigningCertificateCrystal.readFromFile(inputCrystalFile);
             } else if (magicValue == ZIP_MAGIC) {
-                return SigningCertificateLineage.readFromApkFile(inputLineageFile);
+                return SigningCertificateCrystal.readFromApkFile(inputCrystalFile);
             } else {
-                throw new ParameterException("The input file is not a valid lineage file.");
+                throw new ParameterException("The input file is not a valid crystal file.");
             }
         } catch (IOException | ApkFormatException | IllegalArgumentException e) {
             throw new ParameterException(e.getMessage());

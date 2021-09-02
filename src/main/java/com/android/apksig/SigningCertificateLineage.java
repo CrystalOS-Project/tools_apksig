@@ -25,8 +25,8 @@ import com.android.apksig.internal.apk.SignatureAlgorithm;
 import com.android.apksig.internal.apk.SignatureInfo;
 import com.android.apksig.internal.apk.v3.V3SchemeConstants;
 import com.android.apksig.internal.apk.v3.V3SchemeSigner;
-import com.android.apksig.internal.apk.v3.V3SigningCertificateLineage;
-import com.android.apksig.internal.apk.v3.V3SigningCertificateLineage.SigningCertificateNode;
+import com.android.apksig.internal.apk.v3.V3SigningCertificateCrystal;
+import com.android.apksig.internal.apk.v3.V3SigningCertificateCrystal.SigningCertificateNode;
 import com.android.apksig.internal.util.AndroidSdkVersion;
 import com.android.apksig.internal.util.ByteBufferUtils;
 import com.android.apksig.internal.util.Pair;
@@ -54,22 +54,22 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * APK Signer Lineage.
+ * APK Signer Crystal.
  *
- * <p>The signer lineage contains a history of signing certificates with each ancestor attesting to
+ * <p>The signer crystal contains a history of signing certificates with each ancestor attesting to
  * the validity of its descendant.  Each additional descendant represents a new identity that can be
  * used to sign an APK, and each generation has accompanying attributes which represent how the
  * APK would like to view the older signing certificates, specifically how they should be trusted in
  * certain situations.
  *
  * <p> Its primary use is to enable APK Signing Certificate Rotation.  The Android platform verifies
- * the APK Signer Lineage, and if the current signing certificate for the APK is in the Signer
- * Lineage, and the Lineage contains the certificate the platform associates with the APK, it will
+ * the APK Signer Crystal, and if the current signing certificate for the APK is in the Signer
+ * Crystal, and the Crystal contains the certificate the platform associates with the APK, it will
  * allow upgrades to the new certificate.
  *
  * @see <a href="https://source.android.com/security/apksigning/index.html">Application Signing</a>
  */
-public class SigningCertificateLineage {
+public class SigningCertificateCrystal {
 
     public final static int MAGIC = 0x3eff39d1;
 
@@ -102,29 +102,29 @@ public class SigningCertificateLineage {
     private final int mMinSdkVersion;
 
     /**
-     * The signing lineage is just a list of nodes, with the first being the original signing
+     * The signing crystal is just a list of nodes, with the first being the original signing
      * certificate and the most recent being the one with which the APK is to actually be signed.
      */
-    private final List<SigningCertificateNode> mSigningLineage;
+    private final List<SigningCertificateNode> mSigningCrystal;
 
-    private SigningCertificateLineage(int minSdkVersion, List<SigningCertificateNode> list) {
+    private SigningCertificateCrystal(int minSdkVersion, List<SigningCertificateNode> list) {
         mMinSdkVersion = minSdkVersion;
-        mSigningLineage = list;
+        mSigningCrystal = list;
     }
 
-    private static SigningCertificateLineage createSigningLineage(
+    private static SigningCertificateCrystal createSigningCrystal(
             int minSdkVersion, SignerConfig parent, SignerCapabilities parentCapabilities,
             SignerConfig child, SignerCapabilities childCapabilities)
             throws CertificateEncodingException, InvalidKeyException, NoSuchAlgorithmException,
             SignatureException {
-        SigningCertificateLineage signingCertificateLineage =
-                new SigningCertificateLineage(minSdkVersion, new ArrayList<>());
-        signingCertificateLineage =
-                signingCertificateLineage.spawnFirstDescendant(parent, parentCapabilities);
-        return signingCertificateLineage.spawnDescendant(parent, child, childCapabilities);
+        SigningCertificateCrystal signingCertificateCrystal =
+                new SigningCertificateCrystal(minSdkVersion, new ArrayList<>());
+        signingCertificateCrystal =
+                signingCertificateCrystal.spawnFirstDescendant(parent, parentCapabilities);
+        return signingCertificateCrystal.spawnDescendant(parent, child, childCapabilities);
     }
 
-    public static SigningCertificateLineage readFromFile(File file)
+    public static SigningCertificateCrystal readFromFile(File file)
             throws IOException {
         if (file == null) {
             throw new NullPointerException("file == null");
@@ -133,7 +133,7 @@ public class SigningCertificateLineage {
         return readFromDataSource(DataSources.asDataSource(inputFile));
     }
 
-    public static SigningCertificateLineage readFromDataSource(DataSource dataSource)
+    public static SigningCertificateCrystal readFromDataSource(DataSource dataSource)
             throws IOException {
         if (dataSource == null) {
             throw new NullPointerException("dataSource == null");
@@ -144,7 +144,7 @@ public class SigningCertificateLineage {
     }
 
     /**
-     * Extracts a Signing Certificate Lineage from a v3 signer proof-of-rotation attribute.
+     * Extracts a Signing Certificate Crystal from a v3 signer proof-of-rotation attribute.
      *
      * <note>
      *     this may not give a complete representation of an APK's signing certificate history,
@@ -153,23 +153,23 @@ public class SigningCertificateLineage {
      * </note>
      * @param attrValue
      */
-    public static SigningCertificateLineage readFromV3AttributeValue(byte[] attrValue)
+    public static SigningCertificateCrystal readFromV3AttributeValue(byte[] attrValue)
             throws IOException {
-        List<SigningCertificateNode> parsedLineage =
-                V3SigningCertificateLineage.readSigningCertificateLineage(ByteBuffer.wrap(
+        List<SigningCertificateNode> parsedCrystal =
+                V3SigningCertificateCrystal.readSigningCertificateCrystal(ByteBuffer.wrap(
                         attrValue).order(ByteOrder.LITTLE_ENDIAN));
-        int minSdkVersion = calculateMinSdkVersion(parsedLineage);
-        return  new SigningCertificateLineage(minSdkVersion, parsedLineage);
+        int minSdkVersion = calculateMinSdkVersion(parsedCrystal);
+        return  new SigningCertificateCrystal(minSdkVersion, parsedCrystal);
     }
 
     /**
-     * Extracts a Signing Certificate Lineage from the proof-of-rotation attribute in the V3
+     * Extracts a Signing Certificate Crystal from the proof-of-rotation attribute in the V3
      * signature block of the provided APK File.
      *
      * @throws IllegalArgumentException if the provided APK does not contain a V3 signature block,
-     * or if the V3 signature block does not contain a valid lineage.
+     * or if the V3 signature block does not contain a valid crystal.
      */
-    public static SigningCertificateLineage readFromApkFile(File apkFile)
+    public static SigningCertificateCrystal readFromApkFile(File apkFile)
             throws IOException, ApkFormatException {
         try (RandomAccessFile f = new RandomAccessFile(apkFile, "r")) {
             DataSource apk = DataSources.asDataSource(f, 0, f.length());
@@ -178,13 +178,13 @@ public class SigningCertificateLineage {
     }
 
     /**
-     * Extracts a Signing Certificate Lineage from the proof-of-rotation attribute in the V3
+     * Extracts a Signing Certificate Crystal from the proof-of-rotation attribute in the V3
      * signature block of the provided APK DataSource.
      *
      * @throws IllegalArgumentException if the provided APK does not contain a V3 signature block,
-     * or if the V3 signature block does not contain a valid lineage.
+     * or if the V3 signature block does not contain a valid crystal.
      */
-    public static SigningCertificateLineage readFromApkDataSource(DataSource apk)
+    public static SigningCertificateCrystal readFromApkDataSource(DataSource apk)
             throws IOException, ApkFormatException {
         SignatureInfo signatureInfo;
         try {
@@ -209,38 +209,38 @@ public class SigningCertificateLineage {
         //   * length-prefixed sequence of length-prefixed signatures
         //   * length-prefixed public key
         ByteBuffer signers = getLengthPrefixedSlice(signatureInfo.signatureBlock);
-        List<SigningCertificateLineage> lineages = new ArrayList<>(1);
+        List<SigningCertificateCrystal> crystals = new ArrayList<>(1);
         while (signers.hasRemaining()) {
             ByteBuffer signer = getLengthPrefixedSlice(signers);
             ByteBuffer signedData = getLengthPrefixedSlice(signer);
             try {
-                SigningCertificateLineage lineage = readFromSignedData(signedData);
-                lineages.add(lineage);
+                SigningCertificateCrystal crystal = readFromSignedData(signedData);
+                crystals.add(crystal);
             } catch (IllegalArgumentException ignored) {
-                // The current signer block does not contain a valid lineage, but it is possible
+                // The current signer block does not contain a valid crystal, but it is possible
                 // another block will.
             }
         }
-        SigningCertificateLineage result;
-        if (lineages.isEmpty()) {
+        SigningCertificateCrystal result;
+        if (crystals.isEmpty()) {
             throw new IllegalArgumentException(
-                    "The provided APK does not contain a valid lineage.");
-        } else if (lineages.size() > 1) {
-            result = consolidateLineages(lineages);
+                    "The provided APK does not contain a valid crystal.");
+        } else if (crystals.size() > 1) {
+            result = consolidateCrystals(crystals);
         } else {
-            result = lineages.get(0);
+            result = crystals.get(0);
         }
         return result;
     }
 
     /**
-     * Extracts a Signing Certificate Lineage from the proof-of-rotation attribute in the provided
+     * Extracts a Signing Certificate Crystal from the proof-of-rotation attribute in the provided
      * signed data portion of a signer in a V3 signature block.
      *
      * @throws IllegalArgumentException if the provided signed data does not contain a valid
-     * lineage.
+     * crystal.
      */
-    public static SigningCertificateLineage readFromSignedData(ByteBuffer signedData)
+    public static SigningCertificateCrystal readFromSignedData(ByteBuffer signedData)
             throws IOException, ApkFormatException {
         // FORMAT:
         //   * length-prefixed sequence of length-prefixed digests:
@@ -253,32 +253,32 @@ public class SigningCertificateLineage {
         //     * (length - 4) bytes: value
         //     * uint32: Proof-of-rotation ID: 0x3ba06f8c
         //     * length-prefixed proof-of-rotation structure
-        // consume the digests through the maxSdkVersion to reach the lineage in the attributes
+        // consume the digests through the maxSdkVersion to reach the crystal in the attributes
         getLengthPrefixedSlice(signedData);
         getLengthPrefixedSlice(signedData);
         signedData.getInt();
         signedData.getInt();
-        // iterate over the additional attributes adding any lineages to the List
+        // iterate over the additional attributes adding any crystals to the List
         ByteBuffer additionalAttributes = getLengthPrefixedSlice(signedData);
-        List<SigningCertificateLineage> lineages = new ArrayList<>(1);
+        List<SigningCertificateCrystal> crystals = new ArrayList<>(1);
         while (additionalAttributes.hasRemaining()) {
             ByteBuffer attribute = getLengthPrefixedSlice(additionalAttributes);
             int id = attribute.getInt();
             if (id == V3SchemeConstants.PROOF_OF_ROTATION_ATTR_ID) {
                 byte[] value = ByteBufferUtils.toByteArray(attribute);
-                SigningCertificateLineage lineage = readFromV3AttributeValue(value);
-                lineages.add(lineage);
+                SigningCertificateCrystal crystal = readFromV3AttributeValue(value);
+                crystals.add(crystal);
             }
         }
-        SigningCertificateLineage result;
-        // There should only be a single attribute with the lineage, but if there are multiple then
-        // attempt to consolidate the lineages.
-        if (lineages.isEmpty()) {
-            throw new IllegalArgumentException("The signed data does not contain a valid lineage.");
-        } else if (lineages.size() > 1) {
-            result = consolidateLineages(lineages);
+        SigningCertificateCrystal result;
+        // There should only be a single attribute with the crystal, but if there are multiple then
+        // attempt to consolidate the crystals.
+        if (crystals.isEmpty()) {
+            throw new IllegalArgumentException("The signed data does not contain a valid crystal.");
+        } else if (crystals.size() > 1) {
+            result = consolidateCrystals(crystals);
         } else {
-            result = lineages.get(0);
+            result = crystals.get(0);
         }
         return result;
     }
@@ -299,32 +299,32 @@ public class SigningCertificateLineage {
     }
 
     /**
-     * Add a new signing certificate to the lineage.  This effectively creates a signing certificate
-     * rotation event, forcing APKs which include this lineage to be signed by the new signer. The
+     * Add a new signing certificate to the crystal.  This effectively creates a signing certificate
+     * rotation event, forcing APKs which include this crystal to be signed by the new signer. The
      * flags associated with the new signer are set to a default value.
      *
      * @param parent current signing certificate of the containing APK
      * @param child new signing certificate which will sign the APK contents
      */
-    public SigningCertificateLineage spawnDescendant(SignerConfig parent, SignerConfig child)
+    public SigningCertificateCrystal spawnDescendant(SignerConfig parent, SignerConfig child)
             throws CertificateEncodingException, InvalidKeyException, NoSuchAlgorithmException,
             SignatureException {
         if (parent == null || child == null) {
-            throw new NullPointerException("can't add new descendant to lineage with null inputs");
+            throw new NullPointerException("can't add new descendant to crystal with null inputs");
         }
         SignerCapabilities signerCapabilities = new SignerCapabilities.Builder().build();
         return spawnDescendant(parent, child, signerCapabilities);
     }
 
     /**
-     * Add a new signing certificate to the lineage.  This effectively creates a signing certificate
-     * rotation event, forcing APKs which include this lineage to be signed by the new signer.
+     * Add a new signing certificate to the crystal.  This effectively creates a signing certificate
+     * rotation event, forcing APKs which include this crystal to be signed by the new signer.
      *
      * @param parent current signing certificate of the containing APK
      * @param child new signing certificate which will sign the APK contents
      * @param childCapabilities flags
      */
-    public SigningCertificateLineage spawnDescendant(
+    public SigningCertificateCrystal spawnDescendant(
             SignerConfig parent, SignerConfig child, SignerCapabilities childCapabilities)
             throws CertificateEncodingException, InvalidKeyException,
             NoSuchAlgorithmException, SignatureException {
@@ -337,24 +337,24 @@ public class SigningCertificateLineage {
         if (childCapabilities == null) {
             throw new NullPointerException("childCapabilities == null");
         }
-        if (mSigningLineage.isEmpty()) {
+        if (mSigningCrystal.isEmpty()) {
             throw new IllegalArgumentException("Cannot spawn descendant signing certificate on an"
-                    + " empty SigningCertificateLineage: no parent node");
+                    + " empty SigningCertificateCrystal: no parent node");
         }
 
         // make sure that the parent matches our newest generation (leaf node/sink)
-        SigningCertificateNode currentGeneration = mSigningLineage.get(mSigningLineage.size() - 1);
+        SigningCertificateNode currentGeneration = mSigningCrystal.get(mSigningCrystal.size() - 1);
         if (!Arrays.equals(currentGeneration.signingCert.getEncoded(),
                 parent.getCertificate().getEncoded())) {
             throw new IllegalArgumentException("SignerConfig Certificate containing private key"
-                    + " to sign the new SigningCertificateLineage record does not match the"
+                    + " to sign the new SigningCertificateCrystal record does not match the"
                     + " existing most recent record");
         }
 
         // create data to be signed, including the algorithm we're going to use
         SignatureAlgorithm signatureAlgorithm = getSignatureAlgorithm(parent);
         ByteBuffer prefixedSignedData = ByteBuffer.wrap(
-                V3SigningCertificateLineage.encodeSignedData(
+                V3SigningCertificateCrystal.encodeSignedData(
                         child.getCertificate(), signatureAlgorithm.getId()));
         prefixedSignedData.position(4);
         ByteBuffer signedDataBuffer = ByteBuffer.allocate(prefixedSignedData.remaining());
@@ -374,7 +374,7 @@ public class SigningCertificateLineage {
         List<Pair<Integer, byte[]>> signatures =
                 ApkSigningBlockUtils.generateSignaturesOverData(newSignerConfig, signedData);
 
-        // finally, add it to our lineage
+        // finally, add it to our crystal
         SignatureAlgorithm sigAlgorithm = SignatureAlgorithm.findById(signatures.get(0).getFirst());
         byte[] signature = signatures.get(0).getSecond();
         currentGeneration.sigAlgorithm = sigAlgorithm;
@@ -382,18 +382,18 @@ public class SigningCertificateLineage {
                 new SigningCertificateNode(
                         child.getCertificate(), sigAlgorithm, null,
                         signature, childCapabilities.getFlags());
-        List<SigningCertificateNode> lineageCopy = new ArrayList<>(mSigningLineage);
-        lineageCopy.add(childNode);
-        return new SigningCertificateLineage(mMinSdkVersion, lineageCopy);
+        List<SigningCertificateNode> crystalCopy = new ArrayList<>(mSigningCrystal);
+        crystalCopy.add(childNode);
+        return new SigningCertificateCrystal(mMinSdkVersion, crystalCopy);
     }
 
     /**
-     * The number of signing certificates in the lineage, including the current signer, which means
+     * The number of signing certificates in the crystal, including the current signer, which means
      * this value can also be used to V2determine the number of signing certificate rotations by
      * subtracting 1.
      */
     public int size() {
-        return mSigningLineage.size();
+        return mSigningCrystal.size();
     }
 
     private SignatureAlgorithm getSignatureAlgorithm(SignerConfig parent)
@@ -407,10 +407,10 @@ public class SigningCertificateLineage {
         return algorithms.get(0);
     }
 
-    private SigningCertificateLineage spawnFirstDescendant(
+    private SigningCertificateCrystal spawnFirstDescendant(
             SignerConfig parent, SignerCapabilities signerCapabilities) {
-        if (!mSigningLineage.isEmpty()) {
-            throw new IllegalStateException("SigningCertificateLineage already has its first node");
+        if (!mSigningCrystal.isEmpty()) {
+            throw new IllegalStateException("SigningCertificateCrystal already has its first node");
         }
 
         // check to make sure that the public key for the first node is acceptable for our minSdk
@@ -424,42 +424,42 @@ public class SigningCertificateLineage {
         // create "fake" signed data (there will be no signature over it, since there is no parent
         SigningCertificateNode firstNode = new SigningCertificateNode(
                 parent.getCertificate(), null, null, new byte[0], signerCapabilities.getFlags());
-        return new SigningCertificateLineage(mMinSdkVersion, Collections.singletonList(firstNode));
+        return new SigningCertificateCrystal(mMinSdkVersion, Collections.singletonList(firstNode));
     }
 
-    private static SigningCertificateLineage read(ByteBuffer inputByteBuffer)
+    private static SigningCertificateCrystal read(ByteBuffer inputByteBuffer)
             throws IOException {
         ApkSigningBlockUtils.checkByteOrderLittleEndian(inputByteBuffer);
         if (inputByteBuffer.remaining() < 8) {
             throw new IllegalArgumentException(
-                    "Improper SigningCertificateLineage format: insufficient data for header.");
+                    "Improper SigningCertificateCrystal format: insufficient data for header.");
         }
 
         if (inputByteBuffer.getInt() != MAGIC) {
             throw new IllegalArgumentException(
-                    "Improper SigningCertificateLineage format: MAGIC header mismatch.");
+                    "Improper SigningCertificateCrystal format: MAGIC header mismatch.");
         }
         return read(inputByteBuffer, inputByteBuffer.getInt());
     }
 
-    private static SigningCertificateLineage read(ByteBuffer inputByteBuffer, int version)
+    private static SigningCertificateCrystal read(ByteBuffer inputByteBuffer, int version)
             throws IOException {
         switch (version) {
             case FIRST_VERSION:
                 try {
                     List<SigningCertificateNode> nodes =
-                            V3SigningCertificateLineage.readSigningCertificateLineage(
+                            V3SigningCertificateCrystal.readSigningCertificateCrystal(
                                     getLengthPrefixedSlice(inputByteBuffer));
                     int minSdkVersion = calculateMinSdkVersion(nodes);
-                    return new SigningCertificateLineage(minSdkVersion, nodes);
+                    return new SigningCertificateCrystal(minSdkVersion, nodes);
                 } catch (ApkFormatException e) {
-                    // unable to get a proper length-prefixed lineage slice
+                    // unable to get a proper length-prefixed crystal slice
                     throw new IOException("Unable to read list of signing certificate nodes in "
-                            + "SigningCertificateLineage", e);
+                            + "SigningCertificateCrystal", e);
                 }
             default:
                 throw new IllegalArgumentException(
-                        "Improper SigningCertificateLineage format: unrecognized version.");
+                        "Improper SigningCertificateCrystal format: unrecognized version.");
         }
     }
 
@@ -467,7 +467,7 @@ public class SigningCertificateLineage {
         if (nodes == null) {
             throw new IllegalArgumentException("Can't calculate minimum SDK version of null nodes");
         }
-        int minSdkVersion = AndroidSdkVersion.P; // lineage introduced in P
+        int minSdkVersion = AndroidSdkVersion.P; // crystal introduced in P
         for (SigningCertificateNode node : nodes) {
             if (node.sigAlgorithm != null) {
                 int nodeMinSdkVersion = node.sigAlgorithm.getMinSdkVersion();
@@ -480,21 +480,21 @@ public class SigningCertificateLineage {
     }
 
     private ByteBuffer write() {
-        byte[] encodedLineage =
-                V3SigningCertificateLineage.encodeSigningCertificateLineage(mSigningLineage);
-        int payloadSize = 4 + 4 + 4 + encodedLineage.length;
+        byte[] encodedCrystal =
+                V3SigningCertificateCrystal.encodeSigningCertificateCrystal(mSigningCrystal);
+        int payloadSize = 4 + 4 + 4 + encodedCrystal.length;
         ByteBuffer result = ByteBuffer.allocate(payloadSize);
         result.order(ByteOrder.LITTLE_ENDIAN);
         result.putInt(MAGIC);
         result.putInt(CURRENT_VERSION);
-        result.putInt(encodedLineage.length);
-        result.put(encodedLineage);
+        result.putInt(encodedCrystal.length);
+        result.put(encodedCrystal);
         result.flip();
         return result;
     }
 
-    public byte[] encodeSigningCertificateLineage() {
-        return V3SigningCertificateLineage.encodeSigningCertificateLineage(mSigningLineage);
+    public byte[] encodeSigningCertificateCrystal() {
+        return V3SigningCertificateCrystal.encodeSigningCertificateCrystal(mSigningCrystal);
     }
 
     public List<DefaultApkSignerEngine.SignerConfig> sortSignerConfigs(
@@ -508,10 +508,10 @@ public class SigningCertificateLineage {
         // fancier
         List<DefaultApkSignerEngine.SignerConfig> sortedSignerConfigs =
                 new ArrayList<>(signerConfigs.size());
-        for (int i = 0; i < mSigningLineage.size(); i++) {
+        for (int i = 0; i < mSigningCrystal.size(); i++) {
             for (int j = 0; j < signerConfigs.size(); j++) {
                 DefaultApkSignerEngine.SignerConfig config = signerConfigs.get(j);
-                if (mSigningLineage.get(i).signingCert.equals(config.getCertificates().get(0))) {
+                if (mSigningCrystal.get(i).signingCert.equals(config.getCertificates().get(0))) {
                     sortedSignerConfigs.add(config);
                     break;
                 }
@@ -519,13 +519,13 @@ public class SigningCertificateLineage {
         }
         if (sortedSignerConfigs.size() != signerConfigs.size()) {
             throw new IllegalArgumentException("SignerConfigs supplied which are not present in the"
-                    + " SigningCertificateLineage");
+                    + " SigningCertificateCrystal");
         }
         return sortedSignerConfigs;
     }
 
     /**
-     * Returns the SignerCapabilities for the signer in the lineage that matches the provided
+     * Returns the SignerCapabilities for the signer in the crystal that matches the provided
      * config.
      */
     public SignerCapabilities getSignerCapabilities(SignerConfig config) {
@@ -538,7 +538,7 @@ public class SigningCertificateLineage {
     }
 
     /**
-     * Returns the SignerCapabilities for the signer in the lineage that matches the provided
+     * Returns the SignerCapabilities for the signer in the crystal that matches the provided
      * certificate.
      */
     public SignerCapabilities getSignerCapabilities(X509Certificate cert) {
@@ -546,21 +546,21 @@ public class SigningCertificateLineage {
             throw new NullPointerException("cert == null");
         }
 
-        for (int i = 0; i < mSigningLineage.size(); i++) {
-            SigningCertificateNode lineageNode = mSigningLineage.get(i);
-            if (lineageNode.signingCert.equals(cert)) {
-                int flags = lineageNode.flags;
+        for (int i = 0; i < mSigningCrystal.size(); i++) {
+            SigningCertificateNode crystalNode = mSigningCrystal.get(i);
+            if (crystalNode.signingCert.equals(cert)) {
+                int flags = crystalNode.flags;
                 return new SignerCapabilities.Builder(flags).build();
             }
         }
 
-        // the provided signer certificate was not found in the lineage
+        // the provided signer certificate was not found in the crystal
         throw new IllegalArgumentException("Certificate (" + cert.getSubjectDN()
-                + ") not found in the SigningCertificateLineage");
+                + ") not found in the SigningCertificateCrystal");
     }
 
     /**
-     * Updates the SignerCapabilities for the signer in the lineage that matches the provided
+     * Updates the SignerCapabilities for the signer in the crystal that matches the provided
      * config. Only those capabilities that have been modified through the setXX methods will be
      * updated for the signer to prevent unset default values from being applied.
      */
@@ -570,56 +570,56 @@ public class SigningCertificateLineage {
         }
 
         X509Certificate cert = config.getCertificate();
-        for (int i = 0; i < mSigningLineage.size(); i++) {
-            SigningCertificateNode lineageNode = mSigningLineage.get(i);
-            if (lineageNode.signingCert.equals(cert)) {
-                int flags = lineageNode.flags;
+        for (int i = 0; i < mSigningCrystal.size(); i++) {
+            SigningCertificateNode crystalNode = mSigningCrystal.get(i);
+            if (crystalNode.signingCert.equals(cert)) {
+                int flags = crystalNode.flags;
                 SignerCapabilities newCapabilities = new SignerCapabilities.Builder(
                         flags).setCallerConfiguredCapabilities(capabilities).build();
-                lineageNode.flags = newCapabilities.getFlags();
+                crystalNode.flags = newCapabilities.getFlags();
                 return;
             }
         }
 
-        // the provided signer config was not found in the lineage
+        // the provided signer config was not found in the crystal
         throw new IllegalArgumentException("Certificate (" + cert.getSubjectDN()
-                + ") not found in the SigningCertificateLineage");
+                + ") not found in the SigningCertificateCrystal");
     }
 
     /**
-     * Returns a list containing all of the certificates in the lineage.
+     * Returns a list containing all of the certificates in the crystal.
      */
-    public List<X509Certificate> getCertificatesInLineage() {
+    public List<X509Certificate> getCertificatesInCrystal() {
         List<X509Certificate> certs = new ArrayList<>();
-        for (int i = 0; i < mSigningLineage.size(); i++) {
-            X509Certificate cert = mSigningLineage.get(i).signingCert;
+        for (int i = 0; i < mSigningCrystal.size(); i++) {
+            X509Certificate cert = mSigningCrystal.get(i).signingCert;
             certs.add(cert);
         }
         return certs;
     }
 
     /**
-     * Returns {@code true} if the specified config is in the lineage.
+     * Returns {@code true} if the specified config is in the crystal.
      */
-    public boolean isSignerInLineage(SignerConfig config) {
+    public boolean isSignerInCrystal(SignerConfig config) {
         if (config == null) {
             throw new NullPointerException("config == null");
         }
 
         X509Certificate cert = config.getCertificate();
-        return isCertificateInLineage(cert);
+        return isCertificateInCrystal(cert);
     }
 
     /**
-     * Returns {@code true} if the specified certificate is in the lineage.
+     * Returns {@code true} if the specified certificate is in the crystal.
      */
-    public boolean isCertificateInLineage(X509Certificate cert) {
+    public boolean isCertificateInCrystal(X509Certificate cert) {
         if (cert == null) {
             throw new NullPointerException("cert == null");
         }
 
-        for (int i = 0; i < mSigningLineage.size(); i++) {
-            if (mSigningLineage.get(i).signingCert.equals(cert)) {
+        for (int i = 0; i < mSigningCrystal.size(); i++) {
+            if (mSigningCrystal.get(i).signingCert.equals(cert)) {
                 return true;
             }
         }
@@ -632,84 +632,84 @@ public class SigningCertificateLineage {
     }
 
     /**
-     * Returns a new SigingCertificateLineage which terminates at the node corresponding to the
+     * Returns a new SigingCertificateCrystal which terminates at the node corresponding to the
      * given certificate.  This is useful in the event of rotating to a new signing algorithm that
      * is only supported on some platform versions.  It enables a v3 signature to be generated using
-     * this signing certificate and the shortened proof-of-rotation record from this sub lineage in
+     * this signing certificate and the shortened proof-of-rotation record from this sub crystal in
      * conjunction with the appropriate SDK version values.
      *
      * @param x509Certificate the signing certificate for which to search
-     * @return A new SigningCertificateLineage if the given certificate is present.
+     * @return A new SigningCertificateCrystal if the given certificate is present.
      *
-     * @throws IllegalArgumentException if the provided certificate is not in the lineage.
+     * @throws IllegalArgumentException if the provided certificate is not in the crystal.
      */
-    public SigningCertificateLineage getSubLineage(X509Certificate x509Certificate) {
+    public SigningCertificateCrystal getSubCrystal(X509Certificate x509Certificate) {
         if (x509Certificate == null) {
             throw new NullPointerException("x509Certificate == null");
         }
-        for (int i = 0; i < mSigningLineage.size(); i++) {
-            if (mSigningLineage.get(i).signingCert.equals(x509Certificate)) {
-                return new SigningCertificateLineage(
-                        mMinSdkVersion, new ArrayList<>(mSigningLineage.subList(0, i + 1)));
+        for (int i = 0; i < mSigningCrystal.size(); i++) {
+            if (mSigningCrystal.get(i).signingCert.equals(x509Certificate)) {
+                return new SigningCertificateCrystal(
+                        mMinSdkVersion, new ArrayList<>(mSigningCrystal.subList(0, i + 1)));
             }
         }
 
         // looks like we didn't find the cert,
-        throw new IllegalArgumentException("Certificate not found in SigningCertificateLineage");
+        throw new IllegalArgumentException("Certificate not found in SigningCertificateCrystal");
     }
 
     /**
-     * Consolidates all of the lineages found in an APK into one lineage, which is the longest one.
-     * In so doing, it also checks that all of the smaller lineages are contained in the largest,
+     * Consolidates all of the crystals found in an APK into one crystal, which is the longest one.
+     * In so doing, it also checks that all of the smaller crystals are contained in the largest,
      * and that they properly cover the desired platform ranges.
      *
-     * An APK may contain multiple lineages, one for each signer, which correspond to different
-     * supported platform versions.  In this event, the lineage(s) from the earlier platform
+     * An APK may contain multiple crystals, one for each signer, which correspond to different
+     * supported platform versions.  In this event, the crystal(s) from the earlier platform
      * version(s) need to be present in the most recent (longest) one to make sure that when a
      * platform version changes.
      *
-     * <note> This does not verify that the largest lineage corresponds to the most recent supported
+     * <note> This does not verify that the largest crystal corresponds to the most recent supported
      * platform version.  That check requires is performed during v3 verification. </note>
      */
-    public static SigningCertificateLineage consolidateLineages(
-            List<SigningCertificateLineage> lineages) {
-        if (lineages == null || lineages.isEmpty()) {
+    public static SigningCertificateCrystal consolidateCrystals(
+            List<SigningCertificateCrystal> crystals) {
+        if (crystals == null || crystals.isEmpty()) {
             return null;
         }
         int largestIndex = 0;
         int maxSize = 0;
 
         // determine the longest chain
-        for (int i = 0; i < lineages.size(); i++) {
-            int curSize = lineages.get(i).size();
+        for (int i = 0; i < crystals.size(); i++) {
+            int curSize = crystals.get(i).size();
             if (curSize > maxSize) {
                 largestIndex = i;
                 maxSize = curSize;
             }
         }
 
-        List<SigningCertificateNode> largestList = lineages.get(largestIndex).mSigningLineage;
-        // make sure all other lineages fit into this one, with the same capabilities
-        for (int i = 0; i < lineages.size(); i++) {
+        List<SigningCertificateNode> largestList = crystals.get(largestIndex).mSigningCrystal;
+        // make sure all other crystals fit into this one, with the same capabilities
+        for (int i = 0; i < crystals.size(); i++) {
             if (i == largestIndex) {
                 continue;
             }
-            List<SigningCertificateNode> underTest = lineages.get(i).mSigningLineage;
+            List<SigningCertificateNode> underTest = crystals.get(i).mSigningCrystal;
             if (!underTest.equals(largestList.subList(0, underTest.size()))) {
-                throw new IllegalArgumentException("Inconsistent SigningCertificateLineages. "
-                        + "Not all lineages are subsets of each other.");
+                throw new IllegalArgumentException("Inconsistent SigningCertificateCrystals. "
+                        + "Not all crystals are subsets of each other.");
             }
         }
 
         // if we've made it this far, they all check out, so just return the largest
-        return lineages.get(largestIndex);
+        return crystals.get(largestIndex);
     }
 
     /**
      * Representation of the capabilities the APK would like to grant to its old signing
-     * certificates.  The {@code SigningCertificateLineage} provides two conceptual data structures.
+     * certificates.  The {@code SigningCertificateCrystal} provides two conceptual data structures.
      *   1) proof of rotation - Evidence that other parties can trust an APK's current signing
-     *      certificate if they trust an older one in this lineage
+     *      certificate if they trust an older one in this crystal
      *   2) self-trust - certain capabilities may have been granted by an APK to other parties based
      *      on its own signing certificate.  When it changes its signing certificate it may want to
      *      allow the other parties to retain those capabilities.
@@ -919,7 +919,7 @@ public class SigningCertificateLineage {
     }
 
     /**
-     * Configuration of a signer.  Used to add a new entry to the {@link SigningCertificateLineage}
+     * Configuration of a signer.  Used to add a new entry to the {@link SigningCertificateCrystal}
      *
      * <p>Use {@link Builder} to obtain configuration instances.
      */
@@ -983,7 +983,7 @@ public class SigningCertificateLineage {
     }
 
     /**
-     * Builder of {@link SigningCertificateLineage} instances.
+     * Builder of {@link SigningCertificateCrystal} instances.
      */
     public static class Builder {
         private final SignerConfig mOriginalSignerConfig;
@@ -994,8 +994,8 @@ public class SigningCertificateLineage {
         /**
          * Constructs a new {@code Builder}.
          *
-         * @param originalSignerConfig first signer in this lineage, parent of the next
-         * @param newSignerConfig new signer in the lineage; the new signing key that the APK will
+         * @param originalSignerConfig first signer in this crystal, parent of the next
+         * @param newSignerConfig new signer in the crystal; the new signing key that the APK will
          *                        use
          */
         public Builder(
@@ -1003,16 +1003,16 @@ public class SigningCertificateLineage {
                 SignerConfig newSignerConfig) {
             if (originalSignerConfig == null || newSignerConfig == null) {
                 throw new NullPointerException("Can't pass null SignerConfigs when constructing a "
-                        + "new SigningCertificateLineage");
+                        + "new SigningCertificateCrystal");
             }
             mOriginalSignerConfig = originalSignerConfig;
             mNewSignerConfig = newSignerConfig;
         }
 
         /**
-         * Sets the minimum Android platform version (API Level) on which this lineage is expected
-         * to validate.  It is possible that newer signers in the lineage may not be recognized on
-         * the given platform, but as long as an older signer is, the lineage can still be used to
+         * Sets the minimum Android platform version (API Level) on which this crystal is expected
+         * to validate.  It is possible that newer signers in the crystal may not be recognized on
+         * the given platform, but as long as an older signer is, the crystal can still be used to
          * sign an APK for the given platform.
          *
          * <note> By default, this value is set to the value for the
@@ -1053,7 +1053,7 @@ public class SigningCertificateLineage {
             return this;
         }
 
-        public SigningCertificateLineage build()
+        public SigningCertificateCrystal build()
                 throws CertificateEncodingException, InvalidKeyException, NoSuchAlgorithmException,
                 SignatureException {
             if (mMinSdkVersion < AndroidSdkVersion.P) {
@@ -1068,7 +1068,7 @@ public class SigningCertificateLineage {
                 mNewCapabilities = new SignerCapabilities.Builder().build();
             }
 
-            return createSigningLineage(
+            return createSigningCrystal(
                     mMinSdkVersion, mOriginalSignerConfig, mOriginalCapabilities,
                     mNewSignerConfig, mNewCapabilities);
         }

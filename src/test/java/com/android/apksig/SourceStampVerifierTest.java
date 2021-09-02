@@ -221,36 +221,36 @@ public class SourceStampVerifierTest {
     }
 
     @Test
-    public void verifySourceStamp_validStampLineage() throws Exception {
+    public void verifySourceStamp_validStampCrystal() throws Exception {
         Result verificationResult = verifySourceStamp(
-                "stamp-lineage-valid.apk");
+                "stamp-crystal-valid.apk");
         assertVerified(verificationResult);
-        assertSigningCertificatesInLineage(verificationResult, RSA_2048_CERT_SHA256_DIGEST,
+        assertSigningCertificatesInCrystal(verificationResult, RSA_2048_CERT_SHA256_DIGEST,
                 RSA_2048_2_CERT_SHA256_DIGEST);
     }
 
     @Test
-    public void verifySourceStamp_invalidStampLineage() throws Exception {
+    public void verifySourceStamp_invalidStampCrystal() throws Exception {
         Result verificationResult = verifySourceStamp(
-                "stamp-lineage-invalid.apk");
+                "stamp-crystal-invalid.apk");
         assertSourceStampVerificationFailure(verificationResult,
                 ApkVerificationIssue.SOURCE_STAMP_POR_CERT_MISMATCH);
     }
 
     @Test
-    public void verifySourceStamp_multipleSignersInLineage() throws Exception {
-        Result verificationResult = verifySourceStamp("stamp-lineage-with-3-signers.apk", 18, 28);
+    public void verifySourceStamp_multipleSignersInCrystal() throws Exception {
+        Result verificationResult = verifySourceStamp("stamp-crystal-with-3-signers.apk", 18, 28);
         assertVerified(verificationResult);
-        assertSigningCertificatesInLineage(verificationResult, RSA_2048_CERT_SHA256_DIGEST,
+        assertSigningCertificatesInCrystal(verificationResult, RSA_2048_CERT_SHA256_DIGEST,
                 RSA_2048_2_CERT_SHA256_DIGEST, RSA_2048_3_CERT_SHA256_DIGEST);
     }
 
     @Test
-    public void verifySourceStamp_noSignersInLineage_returnsEmptyLineage() throws Exception {
-        // If the source stamp's signer has not yet been rotated then an empty lineage should be
+    public void verifySourceStamp_noSignersInCrystal_returnsEmptyCrystal() throws Exception {
+        // If the source stamp's signer has not yet been rotated then an empty crystal should be
         // returned.
         Result verificationResult = verifySourceStamp("valid-stamp.apk");
-        assertSigningCertificatesInLineage(verificationResult);
+        assertSigningCertificatesInCrystal(verificationResult);
     }
 
     @Test
@@ -401,20 +401,20 @@ public class SourceStampVerifierTest {
 
     /**
      * Asserts that the provided {@code expectedCertDigests} match their respective certificate in
-     * the source stamp's lineage with the oldest signer at element 0.
+     * the source stamp's crystal with the oldest signer at element 0.
      *
-     * <p>If no values are provided for the expectedCertDigests, the source stamp's lineage will
+     * <p>If no values are provided for the expectedCertDigests, the source stamp's crystal will
      * be checked for an empty {@code List} indicating the source stamp has not been rotated.
      */
-    private static void assertSigningCertificatesInLineage(Result result,
+    private static void assertSigningCertificatesInCrystal(Result result,
             String... expectedCertDigests) throws Exception {
-        List<X509Certificate> lineageCertificates =
-                result.getSourceStampInfo().getCertificatesInLineage();
-        assertEquals("Unexpected number of lineage certificates", expectedCertDigests.length,
-                lineageCertificates.size());
+        List<X509Certificate> crystalCertificates =
+                result.getSourceStampInfo().getCertificatesInCrystal();
+        assertEquals("Unexpected number of crystal certificates", expectedCertDigests.length,
+                crystalCertificates.size());
         for (int i = 0; i < expectedCertDigests.length; i++) {
-            assertEquals("Stamp lineage mismatch at signer " + i, expectedCertDigests[i],
-                    toHex(computeSha256DigestBytes(lineageCertificates.get(i).getEncoded())));
+            assertEquals("Stamp crystal mismatch at signer " + i, expectedCertDigests[i],
+                    toHex(computeSha256DigestBytes(crystalCertificates.get(i).getEncoded())));
         }
     }
 }

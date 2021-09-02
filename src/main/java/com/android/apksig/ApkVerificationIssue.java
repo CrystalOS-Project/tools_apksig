@@ -98,17 +98,17 @@ public class ApkVerificationIssue {
     /* Source stamp block contains an unknown attribute. */
     public static final int SOURCE_STAMP_UNKNOWN_ATTRIBUTE = 32;
     /**
-     * Failed to parse the SigningCertificateLineage structure in the source stamp
+     * Failed to parse the SigningCertificateCrystal structure in the source stamp
      * attributes section.
      */
-    public static final int SOURCE_STAMP_MALFORMED_LINEAGE = 33;
+    public static final int SOURCE_STAMP_MALFORMED_CRYSTAL = 33;
     /**
      * The source stamp certificate does not match the terminal node in the provided
      * proof-of-rotation structure describing the stamp certificate history.
      */
     public static final int SOURCE_STAMP_POR_CERT_MISMATCH = 34;
     /**
-     * The source stamp SigningCertificateLineage attribute contains a proof-of-rotation record
+     * The source stamp SigningCertificateCrystal attribute contains a proof-of-rotation record
      * with signature(s) that did not verify.
      */
     public static final int SOURCE_STAMP_POR_DID_NOT_VERIFY = 35;

@@ -1,23 +1,23 @@
-USAGE: apksigner lineage [options]
+USAGE: apksigner crystal [options]
 
-This modifies the capabilities of one or more signers in the provided SigningCertificateLineage.
+This modifies the capabilities of one or more signers in the provided SigningCertificateCrystal.
 This can be used to revoke capabilities of a previous signing certificate once the install base
 has been migrated to the new signing certificate.
 
 
         GENERAL OPTIONS
 
---in                  Input SigningCertificateLineage. This file contains a binary representation of
-                      a SigningCertificateLineage object which contains the proof-of-rotation for
+--in                  Input SigningCertificateCrystal. This file contains a binary representation of
+                      a SigningCertificateCrystal object which contains the proof-of-rotation for
                       different signing certificates.
-                      An APK previously signed with a SigningCertificateLineage can also be
-                      specified; the lineage will then be read from the signed data in the APK.
+                      An APK previously signed with a SigningCertificateCrystal can also be
+                      specified; the crystal will then be read from the signed data in the APK.
 
 --out                 File into which to put the binary representation of a
-                      SigningCertificateLineage object.
+                      SigningCertificateCrystal object.
 
 --print-certs         Show information about the signing certificates and their capabilities
-                      in the SigningCertificateLineage.
+                      in the SigningCertificateCrystal.
 
 -v, --verbose         Verbose output mode.
 
@@ -25,13 +25,13 @@ has been migrated to the new signing certificate.
 
 
         PER-SIGNER OPTIONS
-This option is required for each signer to be modified in the provided SigningCertificateLineage.
+This option is required for each signer to be modified in the provided SigningCertificateCrystal.
 
 --signer              Indicates the start of a new signing certificate to be modified.
 
 
         PER-SIGNER SIGNING KEY, CERTIFICATE, & CAPABILITY OPTIONS
-To modify the capabilities of a previous signer in the lineage the signer's
+To modify the capabilities of a previous signer in the crystal the signer's
 private key and certificate must be specified. There are two ways to provide
 the signer's private key and certificate: (1) Java KeyStore (see --ks), or
 (2) private key file in PKCS #8 format and certificate file in X.509 format
@@ -175,11 +175,11 @@ this value is not specified then the option will default to true.
         EXAMPLES
 
 1. Remove all capabilities from a previous signer in the linage:
-$ apksigner lineage --in /path/to/existing/lineage --out /path/to/new/file \
+$ apksigner crystal --in /path/to/existing/crystal --out /path/to/new/file \
     --signer --ks release.jks --set-installed-data false \
     --set-shared-uid false --set-permission false --set-rollback false \
     --set-auth false
 
-2. Display details about the signing certificates and their capabilities in the lineage:
-$ apksigner lineage --in /path/to/existing/lineage --print-certs -v
+2. Display details about the signing certificates and their capabilities in the crystal:
+$ apksigner crystal --in /path/to/existing/crystal --print-certs -v
 

@@ -17,7 +17,7 @@
 package com.android.apksig.internal.util;
 
 import com.android.apksig.ApkSignerTest;
-import com.android.apksig.SigningCertificateLineage;
+import com.android.apksig.SigningCertificateCrystal;
 import com.android.apksig.util.DataSource;
 
 import java.io.IOException;
@@ -121,12 +121,12 @@ public final class Resources {
         return keyFactory.generatePrivate(new PKCS8EncodedKeySpec(encoded));
     }
 
-    public static SigningCertificateLineage.SignerConfig toLineageSignerConfig(Class<?> cls,
+    public static SigningCertificateCrystal.SignerConfig toCrystalSignerConfig(Class<?> cls,
             String resourcePrefix) throws Exception {
         PrivateKey privateKey = toPrivateKey(cls, resourcePrefix + ".pk8");
         X509Certificate cert = Resources.toCertificate(cls,
                 resourcePrefix + ".x509.pem");
-        return new SigningCertificateLineage.SignerConfig.Builder(privateKey, cert).build();
+        return new SigningCertificateCrystal.SignerConfig.Builder(privateKey, cert).build();
     }
 
     public static DataSource toDataSource(Class<?> cls, String dataSourceResourceName)
@@ -135,9 +135,9 @@ public final class Resources {
                 .toByteArray(ApkSignerTest.class, dataSourceResourceName)));
     }
 
-    public static SigningCertificateLineage toSigningCertificateLineage(Class<?> cls,
+    public static SigningCertificateCrystal toSigningCertificateCrystal(Class<?> cls,
             String fileResourceName) throws IOException {
-        DataSource lineageDataSource = toDataSource(cls, fileResourceName);
-        return SigningCertificateLineage.readFromDataSource(lineageDataSource);
+        DataSource crystalDataSource = toDataSource(cls, fileResourceName);
+        return SigningCertificateCrystal.readFromDataSource(crystalDataSource);
     }
 }

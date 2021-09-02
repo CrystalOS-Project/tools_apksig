@@ -22,7 +22,7 @@ import static com.android.apksig.internal.apk.ContentDigestAlgorithm.CHUNKED_SHA
 import static com.android.apksig.internal.apk.ContentDigestAlgorithm.VERITY_CHUNKED_SHA256;
 
 import com.android.apksig.ApkVerifier;
-import com.android.apksig.SigningCertificateLineage;
+import com.android.apksig.SigningCertificateCrystal;
 import com.android.apksig.apk.ApkFormatException;
 import com.android.apksig.apk.ApkUtils;
 import com.android.apksig.internal.asn1.Asn1BerParser;
@@ -1269,11 +1269,11 @@ public class ApkSigningBlockUtils {
 
         public int minSdkVersion;
         public int maxSdkVersion;
-        public SigningCertificateLineage mSigningCertificateLineage;
+        public SigningCertificateCrystal mSigningCertificateCrystal;
     }
 
     public static class Result extends ApkSigResult {
-        public SigningCertificateLineage signingCertificateLineage = null;
+        public SigningCertificateCrystal signingCertificateCrystal = null;
         public final List<Result.SignerInfo> signers = new ArrayList<>();
         private final List<ApkVerifier.IssueWithParams> mWarnings = new ArrayList<>();
         private final List<ApkVerifier.IssueWithParams> mErrors = new ArrayList<>();
@@ -1337,7 +1337,7 @@ public class ApkSigningBlockUtils {
             public byte[] signedData;
             public int minSdkVersion;
             public int maxSdkVersion;
-            public SigningCertificateLineage signingCertificateLineage;
+            public SigningCertificateCrystal signingCertificateCrystal;
 
             private final List<ApkVerifier.IssueWithParams> mWarnings = new ArrayList<>();
             private final List<ApkVerifier.IssueWithParams> mErrors = new ArrayList<>();

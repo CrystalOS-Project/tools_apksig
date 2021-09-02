@@ -23,7 +23,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
     ApkSignerTest.class,
     ApkVerifierTest.class,
-    SigningCertificateLineageTest.class,
+    SigningCertificateCrystalTest.class,
     SourceStampVerifierTest.class,
     com.android.apksig.apk.AllTests.class,
     com.android.apksig.internal.AllTests.class,

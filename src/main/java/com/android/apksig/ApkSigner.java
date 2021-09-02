@@ -86,7 +86,7 @@ public class ApkSigner {
 
     private final List<SignerConfig> mSignerConfigs;
     private final SignerConfig mSourceStampSignerConfig;
-    private final SigningCertificateLineage mSourceStampSigningCertificateLineage;
+    private final SigningCertificateCrystal mSourceStampSigningCertificateCrystal;
     private final boolean mForceSourceStampOverwrite;
     private final Integer mMinSdkVersion;
     private final boolean mV1SigningEnabled;
@@ -110,12 +110,12 @@ public class ApkSigner {
 
     private final File mOutputV4File;
 
-    private final SigningCertificateLineage mSigningCertificateLineage;
+    private final SigningCertificateCrystal mSigningCertificateCrystal;
 
     private ApkSigner(
             List<SignerConfig> signerConfigs,
             SignerConfig sourceStampSignerConfig,
-            SigningCertificateLineage sourceStampSigningCertificateLineage,
+            SigningCertificateCrystal sourceStampSigningCertificateCrystal,
             boolean forceSourceStampOverwrite,
             Integer minSdkVersion,
             boolean v1SigningEnabled,
@@ -134,11 +134,11 @@ public class ApkSigner {
             DataSink outputApkDataSink,
             DataSource outputApkDataSource,
             File outputV4File,
-            SigningCertificateLineage signingCertificateLineage) {
+            SigningCertificateCrystal signingCertificateCrystal) {
 
         mSignerConfigs = signerConfigs;
         mSourceStampSignerConfig = sourceStampSignerConfig;
-        mSourceStampSigningCertificateLineage = sourceStampSigningCertificateLineage;
+        mSourceStampSigningCertificateCrystal = sourceStampSigningCertificateCrystal;
         mForceSourceStampOverwrite = forceSourceStampOverwrite;
         mMinSdkVersion = minSdkVersion;
         mV1SigningEnabled = v1SigningEnabled;
@@ -162,7 +162,7 @@ public class ApkSigner {
 
         mOutputV4File = outputV4File;
 
-        mSigningCertificateLineage = signingCertificateLineage;
+        mSigningCertificateCrystal = signingCertificateCrystal;
     }
 
     /**
@@ -296,7 +296,7 @@ public class ApkSigner {
                             .setVerityEnabled(mVerityEnabled)
                             .setDebuggableApkPermitted(mDebuggableApkPermitted)
                             .setOtherSignersSignaturesPreserved(mOtherSignersSignaturesPreserved)
-                            .setSigningCertificateLineage(mSigningCertificateLineage);
+                            .setSigningCertificateCrystal(mSigningCertificateCrystal);
             if (mCreatedBy != null) {
                 signerEngineBuilder.setCreatedBy(mCreatedBy);
             }
@@ -309,9 +309,9 @@ public class ApkSigner {
                                         mSourceStampSignerConfig.getDeterministicDsaSigning())
                                 .build());
             }
-            if (mSourceStampSigningCertificateLineage != null) {
-                signerEngineBuilder.setSourceStampSigningCertificateLineage(
-                        mSourceStampSigningCertificateLineage);
+            if (mSourceStampSigningCertificateCrystal != null) {
+                signerEngineBuilder.setSourceStampSigningCertificateCrystal(
+                        mSourceStampSigningCertificateCrystal);
             }
             signerEngine = signerEngineBuilder.build();
         }
@@ -1081,7 +1081,7 @@ public class ApkSigner {
     public static class Builder {
         private final List<SignerConfig> mSignerConfigs;
         private SignerConfig mSourceStampSignerConfig;
-        private SigningCertificateLineage mSourceStampSigningCertificateLineage;
+        private SigningCertificateCrystal mSourceStampSigningCertificateCrystal;
         private boolean mForceSourceStampOverwrite = false;
         private boolean mV1SigningEnabled = true;
         private boolean mV2SigningEnabled = true;
@@ -1105,12 +1105,12 @@ public class ApkSigner {
 
         private File mOutputV4File;
 
-        private SigningCertificateLineage mSigningCertificateLineage;
+        private SigningCertificateCrystal mSigningCertificateCrystal;
 
         // APK Signature Scheme v3 only supports a single signing certificate, so to move to v3
         // signing by default, but not require prior clients to update to explicitly disable v3
         // signing for multiple signers, we modify the mV3SigningEnabled depending on the provided
-        // inputs (multiple signers and mSigningCertificateLineage in particular).  Maintain two
+        // inputs (multiple signers and mSigningCertificateCrystal in particular).  Maintain two
         // extra variables to record whether or not mV3SigningEnabled has been set directly by a
         // client and so should override the default behavior.
         private boolean mV3SigningExplicitlyDisabled = false;
@@ -1132,7 +1132,7 @@ public class ApkSigner {
             }
             if (signerConfigs.size() > 1) {
                 // APK Signature Scheme v3 only supports single signer, unless a
-                // SigningCertificateLineage is provided, in which case this will be reset to true,
+                // SigningCertificateCrystal is provided, in which case this will be reset to true,
                 // since we don't yet have a v4 scheme about which to worry
                 mV3SigningEnabled = false;
             }
@@ -1161,12 +1161,12 @@ public class ApkSigner {
         }
 
         /**
-         * Sets the source stamp {@link SigningCertificateLineage}. This structure provides proof of
+         * Sets the source stamp {@link SigningCertificateCrystal}. This structure provides proof of
          * signing certificate rotation for certificates previously used to sign source stamps.
          */
-        public Builder setSourceStampSigningCertificateLineage(
-                SigningCertificateLineage sourceStampSigningCertificateLineage) {
-            mSourceStampSigningCertificateLineage = sourceStampSigningCertificateLineage;
+        public Builder setSourceStampSigningCertificateCrystal(
+                SigningCertificateCrystal sourceStampSigningCertificateCrystal) {
+            mSourceStampSigningCertificateCrystal = sourceStampSigningCertificateCrystal;
             return this;
         }
 
@@ -1486,15 +1486,15 @@ public class ApkSigner {
         }
 
         /**
-         * Sets the {@link SigningCertificateLineage} to use with the v3 signature scheme. This
+         * Sets the {@link SigningCertificateCrystal} to use with the v3 signature scheme. This
          * structure provides proof of signing certificate rotation linking {@link SignerConfig}
          * objects to previous ones.
          */
-        public Builder setSigningCertificateLineage(
-                SigningCertificateLineage signingCertificateLineage) {
-            if (signingCertificateLineage != null) {
+        public Builder setSigningCertificateCrystal(
+                SigningCertificateCrystal signingCertificateCrystal) {
+            if (signingCertificateCrystal != null) {
                 mV3SigningEnabled = true;
-                mSigningCertificateLineage = signingCertificateLineage;
+                mSigningCertificateCrystal = signingCertificateCrystal;
             }
             return this;
         }
@@ -1535,7 +1535,7 @@ public class ApkSigner {
             return new ApkSigner(
                     mSignerConfigs,
                     mSourceStampSignerConfig,
-                    mSourceStampSigningCertificateLineage,
+                    mSourceStampSigningCertificateCrystal,
                     mForceSourceStampOverwrite,
                     mMinSdkVersion,
                     mV1SigningEnabled,
@@ -1554,7 +1554,7 @@ public class ApkSigner {
                     mOutputApkDataSink,
                     mOutputApkDataSource,
                     mOutputV4File,
-                    mSigningCertificateLineage);
+                    mSigningCertificateCrystal);
         }
     }
 }

@@ -20,7 +20,7 @@ import static com.android.apksig.internal.apk.ApkSigningBlockUtils.getLengthPref
 import static com.android.apksig.internal.apk.ApkSigningBlockUtils.readLengthPrefixedByteArray;
 
 import com.android.apksig.ApkVerifier.Issue;
-import com.android.apksig.SigningCertificateLineage;
+import com.android.apksig.SigningCertificateCrystal;
 import com.android.apksig.apk.ApkFormatException;
 import com.android.apksig.apk.ApkUtils;
 import com.android.apksig.internal.apk.ApkSigningBlockUtils;
@@ -167,10 +167,10 @@ public abstract class V3SchemeVerifier {
         // first make sure there is neither overlap nor holes
         int firstMin = 0;
         int lastMax = 0;
-        int lastLineageSize = 0;
+        int lastCrystalSize = 0;
 
-        // while we're iterating through the signers, build up the list of lineages
-        List<SigningCertificateLineage> lineages = new ArrayList<>(result.signers.size());
+        // while we're iterating through the signers, build up the list of crystals
+        List<SigningCertificateCrystal> crystals = new ArrayList<>(result.signers.size());
 
         for (ApkSigningBlockUtils.Result.SignerInfo signer : sortedSigners.values()) {
             int currentMin = signer.minSdkVersion;
@@ -186,15 +186,15 @@ public abstract class V3SchemeVerifier {
             }
             lastMax = currentMax;
 
-            // also, while we're here, make sure that the lineage sizes only increase
-            if (signer.signingCertificateLineage != null) {
-                int currLineageSize = signer.signingCertificateLineage.size();
-                if (currLineageSize < lastLineageSize) {
-                    result.addError(Issue.V3_INCONSISTENT_LINEAGES);
+            // also, while we're here, make sure that the crystal sizes only increase
+            if (signer.signingCertificateCrystal != null) {
+                int currCrystalSize = signer.signingCertificateCrystal.size();
+                if (currCrystalSize < lastCrystalSize) {
+                    result.addError(Issue.V3_INCONSISTENT_CRYSTALS);
                     break;
                 }
-                lastLineageSize = currLineageSize;
-                lineages.add(signer.signingCertificateLineage);
+                lastCrystalSize = currCrystalSize;
+                crystals.add(signer.signingCertificateCrystal);
             }
         }
 
@@ -204,10 +204,10 @@ public abstract class V3SchemeVerifier {
         }
 
         try {
-             result.signingCertificateLineage =
-                     SigningCertificateLineage.consolidateLineages(lineages);
+             result.signingCertificateCrystal =
+                     SigningCertificateCrystal.consolidateCrystals(crystals);
         } catch (IllegalArgumentException e) {
-            result.addError(Issue.V3_INCONSISTENT_LINEAGES);
+            result.addError(Issue.V3_INCONSISTENT_CRYSTALS);
         }
         if (!result.containsErrors()) {
             result.verified = true;
@@ -493,13 +493,13 @@ public abstract class V3SchemeVerifier {
                         new ApkSigningBlockUtils.Result.SignerInfo.AdditionalAttribute(id, value));
                 if (id == V3SchemeConstants.PROOF_OF_ROTATION_ATTR_ID) {
                     try {
-                        // SigningCertificateLineage is verified when built
-                        result.signingCertificateLineage =
-                                SigningCertificateLineage.readFromV3AttributeValue(value);
+                        // SigningCertificateCrystal is verified when built
+                        result.signingCertificateCrystal =
+                                SigningCertificateCrystal.readFromV3AttributeValue(value);
                         // make sure that the last cert in the chain matches this signer cert
-                        SigningCertificateLineage subLineage =
-                                result.signingCertificateLineage.getSubLineage(result.certs.get(0));
-                        if (result.signingCertificateLineage.size() != subLineage.size()) {
+                        SigningCertificateCrystal subCrystal =
+                                result.signingCertificateCrystal.getSubCrystal(result.certs.get(0));
+                        if (result.signingCertificateCrystal.size() != subCrystal.size()) {
                             result.addError(Issue.V3_SIG_POR_CERT_MISMATCH);
                         }
                     } catch (SecurityException e) {
@@ -507,7 +507,7 @@ public abstract class V3SchemeVerifier {
                     } catch (IllegalArgumentException e) {
                         result.addError(Issue.V3_SIG_POR_CERT_MISMATCH);
                     } catch (Exception e) {
-                        result.addError(Issue.V3_SIG_MALFORMED_LINEAGE);
+                        result.addError(Issue.V3_SIG_MALFORMED_CRYSTAL);
                     }
                 } else {
                     result.addWarning(Issue.V3_SIG_UNKNOWN_ADDITIONAL_ATTRIBUTE, id);

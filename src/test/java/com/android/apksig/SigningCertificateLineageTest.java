@@ -21,8 +21,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.android.apksig.SigningCertificateLineage.SignerCapabilities;
-import com.android.apksig.SigningCertificateLineage.SignerConfig;
+import com.android.apksig.SigningCertificateCrystal.SignerCapabilities;
+import com.android.apksig.SigningCertificateCrystal.SignerConfig;
 import com.android.apksig.apk.ApkFormatException;
 import com.android.apksig.internal.apk.ApkSigningBlockUtils;
 import com.android.apksig.internal.apk.v3.V3SchemeConstants;
@@ -49,10 +49,10 @@ import java.util.List;
 import java.util.Set;
 
 @RunWith(JUnit4.class)
-public class SigningCertificateLineageTest {
+public class SigningCertificateCrystalTest {
 
-    // createLineageWithSignersFromResources and updateLineageWithSignerFromResources will add the
-    // SignerConfig for the signers added to the Lineage to this list.
+    // createCrystalWithSignersFromResources and updateCrystalWithSignerFromResources will add the
+    // SignerConfig for the signers added to the Crystal to this list.
     private List<SignerConfig> mSigners;
 
     // All signers with the same prefix and an _X suffix were signed with the private key of the
@@ -71,182 +71,182 @@ public class SigningCertificateLineageTest {
 
     @Test
     public void testFirstRotationContainsExpectedSigners() throws Exception {
-        SigningCertificateLineage lineage = createLineageWithSignersFromResources(
+        SigningCertificateCrystal crystal = createCrystalWithSignersFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME, SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
-        assertLineageContainsExpectedSigners(lineage, mSigners);
-        SignerConfig unknownSigner = Resources.toLineageSignerConfig(getClass(),
+        assertCrystalContainsExpectedSigners(crystal, mSigners);
+        SignerConfig unknownSigner = Resources.toCrystalSignerConfig(getClass(),
                 THIRD_RSA_2048_SIGNER_RESOURCE_NAME);
         assertFalse("The signer " + unknownSigner.getCertificate().getSubjectDN()
-                + " should not be in the lineage", lineage.isSignerInLineage(unknownSigner));
+                + " should not be in the crystal", crystal.isSignerInCrystal(unknownSigner));
     }
 
     @Test
-    public void testRotationWithExistingLineageContainsExpectedSigners() throws Exception {
-        SigningCertificateLineage lineage = createLineageWithSignersFromResources(
+    public void testRotationWithExistingCrystalContainsExpectedSigners() throws Exception {
+        SigningCertificateCrystal crystal = createCrystalWithSignersFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME, SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
-        lineage = updateLineageWithSignerFromResources(lineage,
+        crystal = updateCrystalWithSignerFromResources(crystal,
                 THIRD_RSA_2048_SIGNER_RESOURCE_NAME);
-        assertLineageContainsExpectedSigners(lineage, mSigners);
+        assertCrystalContainsExpectedSigners(crystal, mSigners);
     }
 
     @Test
-    public void testLineageFromFileContainsExpectedSigners() throws Exception {
-        // This file contains the lineage with the three rsa-2048 signers
-        DataSource lineageDataSource = Resources.toDataSource(getClass(),
-                "rsa-2048-lineage-3-signers");
-        SigningCertificateLineage lineage = SigningCertificateLineage.readFromDataSource(
-                lineageDataSource);
+    public void testCrystalFromFileContainsExpectedSigners() throws Exception {
+        // This file contains the crystal with the three rsa-2048 signers
+        DataSource crystalDataSource = Resources.toDataSource(getClass(),
+                "rsa-2048-crystal-3-signers");
+        SigningCertificateCrystal crystal = SigningCertificateCrystal.readFromDataSource(
+                crystalDataSource);
         List<SignerConfig> signers = new ArrayList<>(3);
         signers.add(
-                Resources.toLineageSignerConfig(getClass(), FIRST_RSA_2048_SIGNER_RESOURCE_NAME));
+                Resources.toCrystalSignerConfig(getClass(), FIRST_RSA_2048_SIGNER_RESOURCE_NAME));
         signers.add(
-                Resources.toLineageSignerConfig(getClass(), SECOND_RSA_2048_SIGNER_RESOURCE_NAME));
+                Resources.toCrystalSignerConfig(getClass(), SECOND_RSA_2048_SIGNER_RESOURCE_NAME));
         signers.add(
-                Resources.toLineageSignerConfig(getClass(), THIRD_RSA_2048_SIGNER_RESOURCE_NAME));
-        assertLineageContainsExpectedSigners(lineage, signers);
+                Resources.toCrystalSignerConfig(getClass(), THIRD_RSA_2048_SIGNER_RESOURCE_NAME));
+        assertCrystalContainsExpectedSigners(crystal, signers);
     }
 
     @Test
-    public void testLineageFromFileDoesNotContainUnknownSigner() throws Exception {
-        // This file contains the lineage with the first two rsa-2048 signers
-        SigningCertificateLineage lineage = Resources.toSigningCertificateLineage(getClass(),
-                "rsa-2048-lineage-2-signers");
-        SignerConfig unknownSigner = Resources.toLineageSignerConfig(getClass(),
+    public void testCrystalFromFileDoesNotContainUnknownSigner() throws Exception {
+        // This file contains the crystal with the first two rsa-2048 signers
+        SigningCertificateCrystal crystal = Resources.toSigningCertificateCrystal(getClass(),
+                "rsa-2048-crystal-2-signers");
+        SignerConfig unknownSigner = Resources.toCrystalSignerConfig(getClass(),
                 THIRD_RSA_2048_SIGNER_RESOURCE_NAME);
         assertFalse("The signer " + unknownSigner.getCertificate().getSubjectDN()
-                + " should not be in the lineage", lineage.isSignerInLineage(unknownSigner));
+                + " should not be in the crystal", crystal.isSignerInCrystal(unknownSigner));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testLineageFromFileWithInvalidMagicFails() throws Exception {
-        // This file contains the lineage with two rsa-2048 signers and a modified MAGIC value
-        Resources.toSigningCertificateLineage(getClass(), "rsa-2048-lineage-invalid-magic");
+    public void testCrystalFromFileWithInvalidMagicFails() throws Exception {
+        // This file contains the crystal with two rsa-2048 signers and a modified MAGIC value
+        Resources.toSigningCertificateCrystal(getClass(), "rsa-2048-crystal-invalid-magic");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testLineageFromFileWithInvalidVersionFails() throws Exception {
-        // This file contains the lineage with two rsa-2048 signers and an invalid value of FF for
+    public void testCrystalFromFileWithInvalidVersionFails() throws Exception {
+        // This file contains the crystal with two rsa-2048 signers and an invalid value of FF for
         // the version
-        Resources.toSigningCertificateLineage(getClass(), "rsa-2048-lineage-invalid-version");
+        Resources.toSigningCertificateCrystal(getClass(), "rsa-2048-crystal-invalid-version");
     }
 
     @Test
-    public void testLineageWrittenToFileContainsExpectedSigners() throws Exception {
-        SigningCertificateLineage lineage = createLineageWithSignersFromResources(
+    public void testCrystalWrittenToFileContainsExpectedSigners() throws Exception {
+        SigningCertificateCrystal crystal = createCrystalWithSignersFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME, SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
-        lineage = updateLineageWithSignerFromResources(lineage,
+        crystal = updateCrystalWithSignerFromResources(crystal,
                 THIRD_RSA_2048_SIGNER_RESOURCE_NAME);
-        File lineageFile = File.createTempFile(getClass().getSimpleName(), ".bin");
-        lineageFile.deleteOnExit();
-        lineage.writeToFile(lineageFile);
-        lineage = SigningCertificateLineage.readFromFile(lineageFile);
-        assertLineageContainsExpectedSigners(lineage, mSigners);
+        File crystalFile = File.createTempFile(getClass().getSimpleName(), ".bin");
+        crystalFile.deleteOnExit();
+        crystal.writeToFile(crystalFile);
+        crystal = SigningCertificateCrystal.readFromFile(crystalFile);
+        assertCrystalContainsExpectedSigners(crystal, mSigners);
     }
 
     @Test
-    public void testUpdatedCapabilitiesInLineage() throws Exception {
-        SigningCertificateLineage lineage = createLineageWithSignersFromResources(
+    public void testUpdatedCapabilitiesInCrystal() throws Exception {
+        SigningCertificateCrystal crystal = createCrystalWithSignersFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME, SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
         SignerConfig oldSignerConfig = mSigners.get(0);
         List<Boolean> expectedCapabilityValues = Arrays.asList(false, false, false, false, false);
         SignerCapabilities newCapabilities = buildSignerCapabilities(expectedCapabilityValues);
-        lineage.updateSignerCapabilities(oldSignerConfig, newCapabilities);
-        SignerCapabilities updatedCapabilities = lineage.getSignerCapabilities(oldSignerConfig);
+        crystal.updateSignerCapabilities(oldSignerConfig, newCapabilities);
+        SignerCapabilities updatedCapabilities = crystal.getSignerCapabilities(oldSignerConfig);
         assertExpectedCapabilityValues(updatedCapabilities, expectedCapabilityValues);
     }
 
     @Test
-    public void testUpdatedCapabilitiesInLineageWrittenToFile() throws Exception {
-        SigningCertificateLineage lineage = createLineageWithSignersFromResources(
+    public void testUpdatedCapabilitiesInCrystalWrittenToFile() throws Exception {
+        SigningCertificateCrystal crystal = createCrystalWithSignersFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME, SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
         SignerConfig oldSignerConfig = mSigners.get(0);
         List<Boolean> expectedCapabilityValues = Arrays.asList(false, false, false, false, false);
         SignerCapabilities newCapabilities = buildSignerCapabilities(expectedCapabilityValues);
-        lineage.updateSignerCapabilities(oldSignerConfig, newCapabilities);
-        File lineageFile = File.createTempFile(getClass().getSimpleName(), ".bin");
-        lineageFile.deleteOnExit();
-        lineage.writeToFile(lineageFile);
-        lineage = SigningCertificateLineage.readFromFile(lineageFile);
-        SignerCapabilities updatedCapabilities = lineage.getSignerCapabilities(oldSignerConfig);
+        crystal.updateSignerCapabilities(oldSignerConfig, newCapabilities);
+        File crystalFile = File.createTempFile(getClass().getSimpleName(), ".bin");
+        crystalFile.deleteOnExit();
+        crystal.writeToFile(crystalFile);
+        crystal = SigningCertificateCrystal.readFromFile(crystalFile);
+        SignerCapabilities updatedCapabilities = crystal.getSignerCapabilities(oldSignerConfig);
         assertExpectedCapabilityValues(updatedCapabilities, expectedCapabilityValues);
     }
 
     @Test
     public void testCapabilitiesAreNotUpdatedWithDefaultValues() throws Exception {
-        // This file contains the lineage with the first two rsa-2048 signers with the first signer
+        // This file contains the crystal with the first two rsa-2048 signers with the first signer
         // having all of the capabilities set to false.
-        SigningCertificateLineage lineage = Resources.toSigningCertificateLineage(getClass(),
-                "rsa-2048-lineage-no-capabilities-first-signer");
+        SigningCertificateCrystal crystal = Resources.toSigningCertificateCrystal(getClass(),
+                "rsa-2048-crystal-no-capabilities-first-signer");
         List<Boolean> expectedCapabilityValues = Arrays.asList(false, false, false, false, false);
-        SignerConfig oldSignerConfig = Resources.toLineageSignerConfig(getClass(),
+        SignerConfig oldSignerConfig = Resources.toCrystalSignerConfig(getClass(),
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME);
-        SignerCapabilities oldSignerCapabilities = lineage.getSignerCapabilities(oldSignerConfig);
+        SignerCapabilities oldSignerCapabilities = crystal.getSignerCapabilities(oldSignerConfig);
         assertExpectedCapabilityValues(oldSignerCapabilities, expectedCapabilityValues);
         // The builder is called directly to ensure all of the capabilities are set to the default
         // values and the caller configured flags are not modified in this SignerCapabilities.
         SignerCapabilities newCapabilities = new SignerCapabilities.Builder().build();
-        lineage.updateSignerCapabilities(oldSignerConfig, newCapabilities);
-        SignerCapabilities updatedCapabilities = lineage.getSignerCapabilities(oldSignerConfig);
+        crystal.updateSignerCapabilities(oldSignerConfig, newCapabilities);
+        SignerCapabilities updatedCapabilities = crystal.getSignerCapabilities(oldSignerConfig);
         assertExpectedCapabilityValues(updatedCapabilities, expectedCapabilityValues);
     }
 
     @Test
     public void testFirstRotationWitNonDefaultCapabilitiesForSigners() throws Exception {
-        SignerConfig oldSigner = Resources.toLineageSignerConfig(getClass(),
+        SignerConfig oldSigner = Resources.toCrystalSignerConfig(getClass(),
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME);
-        SignerConfig newSigner = Resources.toLineageSignerConfig(getClass(),
+        SignerConfig newSigner = Resources.toCrystalSignerConfig(getClass(),
                 SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
         List<Boolean> oldSignerCapabilityValues = Arrays.asList(false, false, false, false, false);
         List<Boolean> newSignerCapabilityValues = Arrays.asList(false, true, false, false, false);
-        SigningCertificateLineage lineage = new SigningCertificateLineage.Builder(oldSigner,
+        SigningCertificateCrystal crystal = new SigningCertificateCrystal.Builder(oldSigner,
                 newSigner)
                 .setOriginalCapabilities(buildSignerCapabilities(oldSignerCapabilityValues))
                 .setNewCapabilities(buildSignerCapabilities(newSignerCapabilityValues))
                 .build();
-        SignerCapabilities oldSignerCapabilities = lineage.getSignerCapabilities(oldSigner);
+        SignerCapabilities oldSignerCapabilities = crystal.getSignerCapabilities(oldSigner);
         assertExpectedCapabilityValues(oldSignerCapabilities, oldSignerCapabilityValues);
-        SignerCapabilities newSignerCapabilities = lineage.getSignerCapabilities(newSigner);
+        SignerCapabilities newSignerCapabilities = crystal.getSignerCapabilities(newSigner);
         assertExpectedCapabilityValues(newSignerCapabilities, newSignerCapabilityValues);
     }
 
     @Test
-    public void testRotationWithExitingLineageAndNonDefaultCapabilitiesForNewSigner()
+    public void testRotationWithExitingCrystalAndNonDefaultCapabilitiesForNewSigner()
             throws Exception {
-        SigningCertificateLineage lineage = createLineageWithSignersFromResources(
+        SigningCertificateCrystal crystal = createCrystalWithSignersFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME, SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
         SignerConfig oldSigner = mSigners.get(mSigners.size() - 1);
-        SignerConfig newSigner = Resources.toLineageSignerConfig(getClass(),
+        SignerConfig newSigner = Resources.toCrystalSignerConfig(getClass(),
                 THIRD_RSA_2048_SIGNER_RESOURCE_NAME);
         List<Boolean> newSignerCapabilityValues = Arrays.asList(false, false, false, false, false);
-        lineage = lineage.spawnDescendant(oldSigner, newSigner,
+        crystal = crystal.spawnDescendant(oldSigner, newSigner,
                 buildSignerCapabilities(newSignerCapabilityValues));
-        SignerCapabilities newSignerCapabilities = lineage.getSignerCapabilities(newSigner);
+        SignerCapabilities newSignerCapabilities = crystal.getSignerCapabilities(newSigner);
         assertExpectedCapabilityValues(newSignerCapabilities, newSignerCapabilityValues);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testRotationWithExistingLineageUsingNonParentSignerFails() throws Exception {
+    public void testRotationWithExistingCrystalUsingNonParentSignerFails() throws Exception {
         // When rotating the signing certificate the most recent signer must be provided to the
         // spawnDescendant method. This test ensures that using an ancestor of the most recent
         // signer will fail as expected.
-        SigningCertificateLineage lineage = createLineageWithSignersFromResources(
+        SigningCertificateCrystal crystal = createCrystalWithSignersFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME, SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
         SignerConfig oldestSigner = mSigners.get(0);
-        SignerConfig newSigner = Resources.toLineageSignerConfig(getClass(),
+        SignerConfig newSigner = Resources.toCrystalSignerConfig(getClass(),
                 THIRD_RSA_2048_SIGNER_RESOURCE_NAME);
-        lineage.spawnDescendant(oldestSigner, newSigner);
+        crystal.spawnDescendant(oldestSigner, newSigner);
     }
 
     @Test
-    public void testLineageFromV3SignerAttribute() throws Exception {
-        SigningCertificateLineage lineage = createLineageWithSignersFromResources(
+    public void testCrystalFromV3SignerAttribute() throws Exception {
+        SigningCertificateCrystal crystal = createCrystalWithSignersFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME, SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
         // The format of the V3 Signer Attribute is as follows (little endian):
         // * length-prefixed bytes: attribute pair
         //   * uint32: ID
-        //   * bytes: value - encoded V3 SigningCertificateLineage
+        //   * bytes: value - encoded V3 SigningCertificateCrystal
         ByteBuffer v3SignerAttribute = ByteBuffer.wrap(
-                V3SchemeSigner.generateV3SignerAttribute(lineage));
+                V3SchemeSigner.generateV3SignerAttribute(crystal));
         v3SignerAttribute.order(ByteOrder.LITTLE_ENDIAN);
         ByteBuffer attribute = ApkSigningBlockUtils.getLengthPrefixedSlice(v3SignerAttribute);
         // The generateV3SignerAttribute method should only use the PROOF_OF_ROTATION_ATTR_ID
@@ -256,21 +256,21 @@ public class SigningCertificateLineageTest {
                 "The ID of the v3SignerAttribute ByteBuffer is not the expected "
                         + "PROOF_OF_ROTATION_ATTR_ID",
                 V3SchemeConstants.PROOF_OF_ROTATION_ATTR_ID, id);
-        lineage = SigningCertificateLineage.readFromV3AttributeValue(
+        crystal = SigningCertificateCrystal.readFromV3AttributeValue(
                 ByteBufferUtils.toByteArray(attribute));
-        assertLineageContainsExpectedSigners(lineage, mSigners);
+        assertCrystalContainsExpectedSigners(crystal, mSigners);
     }
 
     @Test
     public void testSortedSignerConfigsAreInSortedOrder() throws Exception {
-        SigningCertificateLineage lineage = createLineageWithSignersFromResources(
+        SigningCertificateCrystal crystal = createCrystalWithSignersFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME, SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
         DefaultApkSignerEngine.SignerConfig oldSigner = getApkSignerEngineSignerConfigFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME);
         DefaultApkSignerEngine.SignerConfig newSigner = getApkSignerEngineSignerConfigFromResources(
                 SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
         List<DefaultApkSignerEngine.SignerConfig> signers = Arrays.asList(newSigner, oldSigner);
-        List<DefaultApkSignerEngine.SignerConfig> sortedSigners = lineage.sortSignerConfigs(
+        List<DefaultApkSignerEngine.SignerConfig> sortedSigners = crystal.sortSignerConfigs(
                 signers);
         assertEquals("The sorted signer list does not contain the expected number of elements",
                 signers.size(), sortedSigners.size());
@@ -282,9 +282,9 @@ public class SigningCertificateLineageTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testSortedSignerConfigsWithUnknownSignerFails() throws Exception {
-        // Since this test includes a signer that is not in the lineage the sort should fail with
+        // Since this test includes a signer that is not in the crystal the sort should fail with
         // an IllegalArgumentException.
-        SigningCertificateLineage lineage = createLineageWithSignersFromResources(
+        SigningCertificateCrystal crystal = createCrystalWithSignersFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME, SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
         DefaultApkSignerEngine.SignerConfig oldSigner = getApkSignerEngineSignerConfigFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME);
@@ -294,67 +294,67 @@ public class SigningCertificateLineageTest {
                 getApkSignerEngineSignerConfigFromResources(THIRD_RSA_2048_SIGNER_RESOURCE_NAME);
         List<DefaultApkSignerEngine.SignerConfig> signers = Arrays.asList(newSigner, oldSigner,
                 unknownSigner);
-        lineage.sortSignerConfigs(signers);
+        crystal.sortSignerConfigs(signers);
     }
 
     @Test
-    public void testAllExpectedCertificatesAreInLineage() throws Exception {
-        SigningCertificateLineage lineage = createLineageWithSignersFromResources(
+    public void testAllExpectedCertificatesAreInCrystal() throws Exception {
+        SigningCertificateCrystal crystal = createCrystalWithSignersFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME, SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
-        lineage = updateLineageWithSignerFromResources(lineage,
+        crystal = updateCrystalWithSignerFromResources(crystal,
                 THIRD_RSA_2048_SIGNER_RESOURCE_NAME);
         Set<X509Certificate> expectedCertSet = new HashSet<>();
         for (int i = 0; i < mSigners.size(); i++) {
             expectedCertSet.add(mSigners.get(i).getCertificate());
         }
-        List<X509Certificate> certs = lineage.getCertificatesInLineage();
+        List<X509Certificate> certs = crystal.getCertificatesInCrystal();
         assertEquals(
-                "The number of elements in the certificate list from the lineage does not equal "
+                "The number of elements in the certificate list from the crystal does not equal "
                         + "the expected number",
                 expectedCertSet.size(), certs.size());
         for (X509Certificate cert : certs) {
             // remove the certificate from the Set to ensure duplicate certs were not returned.
-            assertTrue("An unexpected certificate, " + cert.getSubjectDN() + ", is in the lineage",
+            assertTrue("An unexpected certificate, " + cert.getSubjectDN() + ", is in the crystal",
                     expectedCertSet.remove(cert));
         }
     }
 
     @Test
-    public void testSublineageContainsExpectedSigners() throws Exception {
-        SigningCertificateLineage lineage = createLineageWithSignersFromResources(
+    public void testSubcrystalContainsExpectedSigners() throws Exception {
+        SigningCertificateCrystal crystal = createCrystalWithSignersFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME, SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
-        lineage = updateLineageWithSignerFromResources(lineage,
+        crystal = updateCrystalWithSignerFromResources(crystal,
                 THIRD_RSA_2048_SIGNER_RESOURCE_NAME);
         List<SignerConfig> subList = mSigners.subList(0, 2);
         X509Certificate cert = subList.get(1).getCertificate();
-        SigningCertificateLineage subLineage = lineage.getSubLineage(cert);
-        assertLineageContainsExpectedSigners(subLineage, subList);
+        SigningCertificateCrystal subCrystal = crystal.getSubCrystal(cert);
+        assertCrystalContainsExpectedSigners(subCrystal, subList);
     }
 
     @Test
-    public void testConsolidatedLineageContainsExpectedSigners() throws Exception {
-        SigningCertificateLineage lineage = createLineageWithSignersFromResources(
+    public void testConsolidatedCrystalContainsExpectedSigners() throws Exception {
+        SigningCertificateCrystal crystal = createCrystalWithSignersFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME, SECOND_RSA_2048_SIGNER_RESOURCE_NAME);
-        SigningCertificateLineage updatedLineage = updateLineageWithSignerFromResources(lineage,
+        SigningCertificateCrystal updatedCrystal = updateCrystalWithSignerFromResources(crystal,
                 THIRD_RSA_2048_SIGNER_RESOURCE_NAME);
-        List<SigningCertificateLineage> lineages = Arrays.asList(lineage, updatedLineage);
-        SigningCertificateLineage consolidatedLineage =
-                SigningCertificateLineage.consolidateLineages(lineages);
-        assertLineageContainsExpectedSigners(consolidatedLineage, mSigners);
+        List<SigningCertificateCrystal> crystals = Arrays.asList(crystal, updatedCrystal);
+        SigningCertificateCrystal consolidatedCrystal =
+                SigningCertificateCrystal.consolidateCrystals(crystals);
+        assertCrystalContainsExpectedSigners(consolidatedCrystal, mSigners);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConsolidatedLineageWithDisjointLineagesFail() throws Exception {
-        List<SigningCertificateLineage> lineages = new ArrayList<>();
-        lineages.add(createLineageWithSignersFromResources(FIRST_RSA_1024_SIGNER_RESOURCE_NAME,
+    public void testConsolidatedCrystalWithDisjointCrystalsFail() throws Exception {
+        List<SigningCertificateCrystal> crystals = new ArrayList<>();
+        crystals.add(createCrystalWithSignersFromResources(FIRST_RSA_1024_SIGNER_RESOURCE_NAME,
                 SECOND_RSA_1024_SIGNER_RESOURCE_NAME));
-        lineages.add(createLineageWithSignersFromResources(FIRST_RSA_2048_SIGNER_RESOURCE_NAME,
+        crystals.add(createCrystalWithSignersFromResources(FIRST_RSA_2048_SIGNER_RESOURCE_NAME,
                 SECOND_RSA_2048_SIGNER_RESOURCE_NAME));
-        SigningCertificateLineage.consolidateLineages(lineages);
+        SigningCertificateCrystal.consolidateCrystals(crystals);
     }
 
     @Test
-    public void testLineageFromAPKContainsExpectedSigners() throws Exception {
+    public void testCrystalFromAPKContainsExpectedSigners() throws Exception {
         SignerConfig firstSigner = getSignerConfigFromResources(
                 FIRST_RSA_2048_SIGNER_RESOURCE_NAME);
         SignerConfig secondSigner = getSignerConfigFromResources(
@@ -363,53 +363,53 @@ public class SigningCertificateLineageTest {
                 THIRD_RSA_2048_SIGNER_RESOURCE_NAME);
         List<SignerConfig> expectedSigners = Arrays.asList(firstSigner, secondSigner, thirdSigner);
         DataSource apkDataSource = Resources.toDataSource(getClass(),
-                "v1v2v3-with-rsa-2048-lineage-3-signers.apk");
-        SigningCertificateLineage lineageFromApk = SigningCertificateLineage.readFromApkDataSource(
+                "v1v2v3-with-rsa-2048-crystal-3-signers.apk");
+        SigningCertificateCrystal crystalFromApk = SigningCertificateCrystal.readFromApkDataSource(
                 apkDataSource);
-        assertLineageContainsExpectedSigners(lineageFromApk, expectedSigners);
+        assertCrystalContainsExpectedSigners(crystalFromApk, expectedSigners);
     }
 
     @Test(expected = ApkFormatException.class)
-    public void testLineageFromAPKWithInvalidZipCDSizeFails() throws Exception {
-        // This test verifies that attempting to read the lineage from an APK where the zip
+    public void testCrystalFromAPKWithInvalidZipCDSizeFails() throws Exception {
+        // This test verifies that attempting to read the crystal from an APK where the zip
         // sections cannot be parsed fails. This APK is based off the
-        // v1v2v3-with-rsa-2048-lineage-3-signers.apk with a modified CD size in the EoCD.
+        // v1v2v3-with-rsa-2048-crystal-3-signers.apk with a modified CD size in the EoCD.
         DataSource apkDataSource = Resources.toDataSource(getClass(),
-                "v1v2v3-with-rsa-2048-lineage-3-signers-invalid-zip.apk");
-        SigningCertificateLineage.readFromApkDataSource(apkDataSource);
+                "v1v2v3-with-rsa-2048-crystal-3-signers-invalid-zip.apk");
+        SigningCertificateCrystal.readFromApkDataSource(apkDataSource);
     }
 
     @Test
-    public void testLineageFromAPKWithNoLineageFails() throws Exception {
-        // This test verifies that attempting to read the lineage from an APK without a lineage
+    public void testCrystalFromAPKWithNoCrystalFails() throws Exception {
+        // This test verifies that attempting to read the crystal from an APK without a crystal
         // fails.
         // This is a valid APK that has only been signed with the V1 and V2 signature schemes;
-        // since the lineage is an attribute in the V3 signature block this test should fail.
+        // since the crystal is an attribute in the V3 signature block this test should fail.
         DataSource apkDataSource = Resources.toDataSource(getClass(),
                 "golden-aligned-v1v2-out.apk");
         try {
-            SigningCertificateLineage.readFromApkDataSource(apkDataSource);
+            SigningCertificateCrystal.readFromApkDataSource(apkDataSource);
             fail("A failure should have been reported due to the APK not containing a V3 signing "
                     + "block");
         } catch (IllegalArgumentException expected) {}
 
         // This is a valid APK signed with the V1, V2, and V3 signature schemes, but there is no
-        // lineage in the V3 signature block.
+        // crystal in the V3 signature block.
         apkDataSource = Resources.toDataSource(getClass(), "golden-aligned-v1v2v3-out.apk");
         try {
-            SigningCertificateLineage.readFromApkDataSource(apkDataSource);
+            SigningCertificateCrystal.readFromApkDataSource(apkDataSource);
             fail("A failure should have been reported due to the APK containing a V3 signing "
-                    + "block without the lineage attribute");
+                    + "block without the crystal attribute");
         } catch (IllegalArgumentException expected) {}
 
-        // This APK is based off the v1v2v3-with-rsa-2048-lineage-3-signers.apk with a bit flip
-        // in the lineage attribute ID in the V3 signature block.
+        // This APK is based off the v1v2v3-with-rsa-2048-crystal-3-signers.apk with a bit flip
+        // in the crystal attribute ID in the V3 signature block.
         apkDataSource = Resources.toDataSource(getClass(),
-                "v1v2v3-with-rsa-2048-lineage-3-signers-invalid-lineage-attr.apk");
+                "v1v2v3-with-rsa-2048-crystal-3-signers-invalid-crystal-attr.apk");
         try {
-            SigningCertificateLineage.readFromApkDataSource(apkDataSource);
+            SigningCertificateCrystal.readFromApkDataSource(apkDataSource);
             fail("A failure should have been reported due to the APK containing a V3 signing "
-                    + "block with a modified lineage attribute ID");
+                    + "block with a modified crystal attribute ID");
         } catch (IllegalArgumentException expected) {}
     }
 
@@ -417,14 +417,14 @@ public class SigningCertificateLineageTest {
      * Builds a new {@code SigningCertificateLinage.SignerCapabilities} object using the values in
      * the provided {@code List}. The {@code List} should contain {@code boolean} values to be
      * passed to the following methods in the
-     * {@code SigningCertificateLineage.SignerCapabilities.Builder} (if a value is not provided the
+     * {@code SigningCertificateCrystal.SignerCapabilities.Builder} (if a value is not provided the
      * noted default is used):
      *
-     *  {@code SigningCertificateLineage.SignerCapabilities.Builder.setInstalledData} [{@code true}]
-     *  {@code SigningCertificateLineage.SignerCapabilities.Builder.setSharedUid} [{@code true}]
-     *  {@code SigningCertificateLineage.SignerCapabilities.Builder.setPermission} [{@code true}]
-     *  {@code SigningCertificateLineage.SignerCapabilities.Builder.setRollback} [{@code false}]
-     *  {@code SigningCertificateLineage.SignerCapabilities.Builder.setAuth} [{@code true}]
+     *  {@code SigningCertificateCrystal.SignerCapabilities.Builder.setInstalledData} [{@code true}]
+     *  {@code SigningCertificateCrystal.SignerCapabilities.Builder.setSharedUid} [{@code true}]
+     *  {@code SigningCertificateCrystal.SignerCapabilities.Builder.setPermission} [{@code true}]
+     *  {@code SigningCertificateCrystal.SignerCapabilities.Builder.setRollback} [{@code false}]
+     *  {@code SigningCertificateCrystal.SignerCapabilities.Builder.setAuth} [{@code true}]
      *
      * This method should not be used when testing caller configured capabilities since the setXX
      * method for each capability is called.
@@ -445,11 +445,11 @@ public class SigningCertificateLineageTest {
      * {@code boolean} values to be verified against the
      * {@code SigningCertificateLinage.SignerCapabilities} methods in the following order:
      *
-     *  {@mcode SigningCertificateLineage.SignerCapabilities.hasInstalledData}
-     *  {@mcode SigningCertificateLineage.SignerCapabilities.hasSharedUid}
-     *  {@mcode SigningCertificateLineage.SignerCapabilities.hasPermission}
-     *  {@mcode SigningCertificateLineage.SignerCapabilities.hasRollback}
-     *  {@mcode SigningCertificateLineage.SignerCapabilities.hasAuth}
+     *  {@mcode SigningCertificateCrystal.SignerCapabilities.hasInstalledData}
+     *  {@mcode SigningCertificateCrystal.SignerCapabilities.hasSharedUid}
+     *  {@mcode SigningCertificateCrystal.SignerCapabilities.hasPermission}
+     *  {@mcode SigningCertificateCrystal.SignerCapabilities.hasRollback}
+     *  {@mcode SigningCertificateCrystal.SignerCapabilities.hasAuth}
      */
     private void assertExpectedCapabilityValues(SignerCapabilities capabilities,
             List<Boolean> expectedCapabilityValues) {
@@ -473,56 +473,56 @@ public class SigningCertificateLineageTest {
     }
 
     /**
-     * Creates a new {@code SigningCertificateLineage} with the specified signers from the
+     * Creates a new {@code SigningCertificateCrystal} with the specified signers from the
      * resources. {@code mSigners} will be updated with the
-     * {@code SigningCertificateLineage.SignerConfig} for each signer added to the lineage.
+     * {@code SigningCertificateCrystal.SignerConfig} for each signer added to the crystal.
      */
-    private SigningCertificateLineage createLineageWithSignersFromResources(
+    private SigningCertificateCrystal createCrystalWithSignersFromResources(
             String oldSignerResourceName, String newSignerResourceName) throws Exception {
-        SignerConfig oldSignerConfig = Resources.toLineageSignerConfig(getClass(),
+        SignerConfig oldSignerConfig = Resources.toCrystalSignerConfig(getClass(),
                 oldSignerResourceName);
         mSigners.add(oldSignerConfig);
-        SignerConfig newSignerConfig = Resources.toLineageSignerConfig(getClass(),
+        SignerConfig newSignerConfig = Resources.toCrystalSignerConfig(getClass(),
                 newSignerResourceName);
         mSigners.add(newSignerConfig);
-        return new SigningCertificateLineage.Builder(oldSignerConfig, newSignerConfig).build();
+        return new SigningCertificateCrystal.Builder(oldSignerConfig, newSignerConfig).build();
     }
 
     /**
-     * Updates the specified {@code SigningCertificateLineage} with the signer from the resources.
-     * Requires that the {@code mSigners} list contains the previous signers in the lineage since
-     * the most recent signer must be specified when adding a new signer to the lineage.
+     * Updates the specified {@code SigningCertificateCrystal} with the signer from the resources.
+     * Requires that the {@code mSigners} list contains the previous signers in the crystal since
+     * the most recent signer must be specified when adding a new signer to the crystal.
      */
-    private SigningCertificateLineage updateLineageWithSignerFromResources(
-            SigningCertificateLineage lineage, String newSignerResourceName) throws Exception {
-        // To add a new Signer to an existing lineage the config of the last signer must be
-        // specified. If this class was used to create the lineage then the last signer should
+    private SigningCertificateCrystal updateCrystalWithSignerFromResources(
+            SigningCertificateCrystal crystal, String newSignerResourceName) throws Exception {
+        // To add a new Signer to an existing crystal the config of the last signer must be
+        // specified. If this class was used to create the crystal then the last signer should
         // be in the mSigners list.
-        assertTrue("The mSigners list did not contain the expected signers to update the lineage",
+        assertTrue("The mSigners list did not contain the expected signers to update the crystal",
                 mSigners.size() >= 2);
         SignerConfig oldSignerConfig = mSigners.get(mSigners.size() - 1);
-        SignerConfig newSignerConfig = Resources.toLineageSignerConfig(getClass(),
+        SignerConfig newSignerConfig = Resources.toCrystalSignerConfig(getClass(),
                 newSignerResourceName);
         mSigners.add(newSignerConfig);
-        return lineage.spawnDescendant(oldSignerConfig, newSignerConfig);
+        return crystal.spawnDescendant(oldSignerConfig, newSignerConfig);
     }
 
-    private void assertLineageContainsExpectedSigners(SigningCertificateLineage lineage,
+    private void assertCrystalContainsExpectedSigners(SigningCertificateCrystal crystal,
             List<SignerConfig> signers) {
-        assertEquals("The lineage does not contain the expected number of signers",
-                signers.size(), lineage.size());
+        assertEquals("The crystal does not contain the expected number of signers",
+                signers.size(), crystal.size());
         for (SignerConfig signer : signers) {
             assertTrue("The signer " + signer.getCertificate().getSubjectDN()
-                    + " is expected to be in the lineage", lineage.isSignerInLineage(signer));
+                    + " is expected to be in the crystal", crystal.isSignerInCrystal(signer));
         }
     }
 
     private static SignerConfig getSignerConfigFromResources(
             String resourcePrefix) throws Exception {
         PrivateKey privateKey =
-                Resources.toPrivateKey(SigningCertificateLineageTest.class,
+                Resources.toPrivateKey(SigningCertificateCrystalTest.class,
                         resourcePrefix + ".pk8");
-        X509Certificate cert = Resources.toCertificate(SigningCertificateLineageTest.class,
+        X509Certificate cert = Resources.toCertificate(SigningCertificateCrystalTest.class,
                 resourcePrefix + ".x509.pem");
         return new SignerConfig.Builder(privateKey, cert).build();
     }
@@ -530,9 +530,9 @@ public class SigningCertificateLineageTest {
     private static DefaultApkSignerEngine.SignerConfig getApkSignerEngineSignerConfigFromResources(
             String resourcePrefix) throws Exception {
         PrivateKey privateKey =
-                Resources.toPrivateKey(SigningCertificateLineageTest.class,
+                Resources.toPrivateKey(SigningCertificateCrystalTest.class,
                         resourcePrefix + ".pk8");
-        X509Certificate cert = Resources.toCertificate(SigningCertificateLineageTest.class,
+        X509Certificate cert = Resources.toCertificate(SigningCertificateCrystalTest.class,
                 resourcePrefix + ".x509.pem");
         return new DefaultApkSignerEngine.SignerConfig.Builder(resourcePrefix, privateKey,
                 Collections.singletonList(cert)).build();

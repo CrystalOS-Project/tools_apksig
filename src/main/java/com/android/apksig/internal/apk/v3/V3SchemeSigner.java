@@ -22,7 +22,7 @@ import static com.android.apksig.internal.apk.ApkSigningBlockUtils.encodeAsSeque
 import static com.android.apksig.internal.apk.ApkSigningBlockUtils.encodeCertificates;
 import static com.android.apksig.internal.apk.ApkSigningBlockUtils.encodePublicKey;
 
-import com.android.apksig.SigningCertificateLineage;
+import com.android.apksig.SigningCertificateCrystal;
 import com.android.apksig.internal.apk.ApkSigningBlockUtils;
 import com.android.apksig.internal.apk.ApkSigningBlockUtils.SignerConfig;
 import com.android.apksig.internal.apk.ContentDigestAlgorithm;
@@ -53,7 +53,7 @@ import java.util.Map;
  *
  * @see <a href="https://source.android.com/security/apksigning/v2.html">APK Signature Scheme v2</a>
  *     <p>The main contribution of APK Signature Scheme v3 is the introduction of the {@link
- *     SigningCertificateLineage}, which enables an APK to change its signing certificate as long as
+ *     SigningCertificateCrystal}, which enables an APK to change its signing certificate as long as
  *     it can prove the new siging certificate was signed by the old.
  */
 public abstract class V3SchemeSigner {
@@ -147,18 +147,18 @@ public abstract class V3SchemeSigner {
     }
 
     public static byte[] generateV3SignerAttribute(
-            SigningCertificateLineage signingCertificateLineage) {
+            SigningCertificateCrystal signingCertificateCrystal) {
         // FORMAT (little endian):
         // * length-prefixed bytes: attribute pair
         //   * uint32: ID
-        //   * bytes: value - encoded V3 SigningCertificateLineage
-        byte[] encodedLineage = signingCertificateLineage.encodeSigningCertificateLineage();
-        int payloadSize = 4 + 4 + encodedLineage.length;
+        //   * bytes: value - encoded V3 SigningCertificateCrystal
+        byte[] encodedCrystal = signingCertificateCrystal.encodeSigningCertificateCrystal();
+        int payloadSize = 4 + 4 + encodedCrystal.length;
         ByteBuffer result = ByteBuffer.allocate(payloadSize);
         result.order(ByteOrder.LITTLE_ENDIAN);
-        result.putInt(4 + encodedLineage.length);
+        result.putInt(4 + encodedCrystal.length);
         result.putInt(V3SchemeConstants.PROOF_OF_ROTATION_ATTR_ID);
-        result.put(encodedLineage);
+        result.put(encodedCrystal);
         return result.array();
     }
 
@@ -306,10 +306,10 @@ public abstract class V3SchemeSigner {
     }
 
     private static byte[] generateAdditionalAttributes(SignerConfig signerConfig) {
-        if (signerConfig.mSigningCertificateLineage == null) {
+        if (signerConfig.mSigningCertificateCrystal == null) {
             return new byte[0];
         }
-        return generateV3SignerAttribute(signerConfig.mSigningCertificateLineage);
+        return generateV3SignerAttribute(signerConfig.mSigningCertificateCrystal);
     }
 
     private static final class V3SignatureSchemeBlock {

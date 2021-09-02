@@ -42,18 +42,18 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-/** Lightweight version of the V3SigningCertificateLineage to be used for source stamps. */
-public class SourceStampCertificateLineage {
+/** Lightweight version of the V3SigningCertificateCrystal to be used for source stamps. */
+public class SourceStampCertificateCrystal {
 
     private final static int FIRST_VERSION = 1;
     private final static int CURRENT_VERSION = FIRST_VERSION;
 
     /**
-     * Deserializes the binary representation of a SourceStampCertificateLineage. Also
+     * Deserializes the binary representation of a SourceStampCertificateCrystal. Also
      * verifies that the structure is well-formed, e.g. that the signature for each node is from its
      * parent.
      */
-    public static List<SigningCertificateNode> readSigningCertificateLineage(ByteBuffer inputBytes)
+    public static List<SigningCertificateNode> readSigningCertificateCrystal(ByteBuffer inputBytes)
             throws IOException {
         List<SigningCertificateNode> result = new ArrayList<>();
         int nodeCount = 0;
@@ -77,7 +77,7 @@ public class SourceStampCertificateLineage {
         //     * length-prefixed bytes: certificate
         //     * uint32: signature algorithm id
         //   * uint32: flags
-        //   * uint32: signature algorithm id (used by to sign next cert in lineage)
+        //   * uint32: signature algorithm id (used by to sign next cert in crystal)
         //   * length-prefixed bytes: signature over above signed data
 
         X509Certificate lastCert = null;
@@ -87,7 +87,7 @@ public class SourceStampCertificateLineage {
             int version = inputBytes.getInt();
             if (version != CURRENT_VERSION) {
                 // we only have one version to worry about right now, so just check it
-                throw new IllegalArgumentException("Encoded SigningCertificateLineage has a version"
+                throw new IllegalArgumentException("Encoded SigningCertificateCrystal has a version"
                         + " different than any of which we are aware");
             }
             HashSet<X509Certificate> certHistorySet = new HashSet<>();
@@ -116,7 +116,7 @@ public class SourceStampCertificateLineage {
                     if (!sig.verify(signature)) {
                         throw new SecurityException("Unable to verify signature of certificate #"
                                 + nodeCount + " using " + jcaSignatureAlgorithm + " when verifying"
-                                + " SourceStampCertificateLineage object");
+                                + " SourceStampCertificateCrystal object");
                     }
                 }
 
@@ -125,14 +125,14 @@ public class SourceStampCertificateLineage {
                 int signedSigAlgorithm = signedData.getInt();
                 if (lastCert != null && lastSigAlgorithmId != signedSigAlgorithm) {
                     throw new SecurityException("Signing algorithm ID mismatch for certificate #"
-                            + nodeBytes + " when verifying SourceStampCertificateLineage object");
+                            + nodeBytes + " when verifying SourceStampCertificateCrystal object");
                 }
                 lastCert = (X509Certificate) certFactory.generateCertificate(
                     new ByteArrayInputStream(encodedCert));
                 lastCert = new GuaranteedEncodedFormX509Certificate(lastCert, encodedCert);
                 if (certHistorySet.contains(lastCert)) {
                     throw new SecurityException("Encountered duplicate entries in "
-                            + "SigningCertificateLineage at certificate #" + nodeCount + ".  All "
+                            + "SigningCertificateCrystal at certificate #" + nodeCount + ".  All "
                             + "signing certificates should be unique");
                 }
                 certHistorySet.add(lastCert);
@@ -142,21 +142,21 @@ public class SourceStampCertificateLineage {
                         SignatureAlgorithm.findById(sigAlgorithmId), signature, flags));
             }
         } catch(ApkFormatException | BufferUnderflowException e){
-            throw new IOException("Failed to parse SourceStampCertificateLineage object", e);
+            throw new IOException("Failed to parse SourceStampCertificateCrystal object", e);
         } catch(NoSuchAlgorithmException | InvalidKeyException
                 | InvalidAlgorithmParameterException | SignatureException e){
             throw new SecurityException(
                     "Failed to verify signature over signed data for certificate #" + nodeCount
-                            + " when parsing SourceStampCertificateLineage object", e);
+                            + " when parsing SourceStampCertificateCrystal object", e);
         } catch(CertificateException e){
             throw new SecurityException("Failed to decode certificate #" + nodeCount
-                    + " when parsing SourceStampCertificateLineage object", e);
+                    + " when parsing SourceStampCertificateCrystal object", e);
         }
         return result;
     }
 
     /**
-     * Represents one signing certificate in the SourceStampCertificateLineage, which
+     * Represents one signing certificate in the SourceStampCertificateCrystal, which
      * generally means it is/was used at some point to sign source stamps.
      */
     public static class SigningCertificateNode {

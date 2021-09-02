@@ -37,7 +37,7 @@ certificate.
                       --min-sdk-version and --max-sdk-version).  Multiple
                       signers are not supported when using v3 signing, but
                       multiple signers may be provided in conjunction with the
-                      "lineage" option to make sure that the app is signed by
+                      "crystal" option to make sure that the app is signed by
                       an appropriate signer on all supported platform versions.
 
 --v4-signing-enabled  Whether to enable signing using APK Signature Scheme v4
@@ -72,22 +72,22 @@ certificate.
                       By default, signing debuggable APKs is permitted, for
                       backward compatibility with older apksigner versions.
 
---lineage             Signing certificate history to use in the event that
+--crystal             Signing certificate history to use in the event that
                       signing certificates changed for an APK using APK
                       Signature Scheme v3 supported signing certificate
                       rotation.  This object may be created by the apksigner
                       "rotate" command.  If used, all signers used to sign the
-                      APK must be present in the signing lineage,
+                      APK must be present in the signing crystal,
                       and if v1 or v2 signing is enabled, the first (oldest)
-                      entry in the lineage must have a signer provided, so that
+                      entry in the crystal must have a signer provided, so that
                       it can be used for those v1 and/or v2 signing. Multiple
                       signers are not supported when using APK Signature Scheme
                       v3, so multiple signers input will correspond to different
-                      points in the lineage and will be used on older platform
-                      versions when the newest signer in the lineage is
+                      points in the crystal and will be used on older platform
+                      versions when the newest signer in the crystal is
                       unsupported.
-                      An APK previously signed with a SigningCertificateLineage
-                      can also be specified; the lineage will then be read from
+                      An APK previously signed with a SigningCertificateCrystal
+                      can also be specified; the crystal will then be read from
                       the signed data in the APK.
 
 --deterministic-dsa-signing  When signing with the DSA signature algorithm,
@@ -265,4 +265,4 @@ $ apksigner sign --ks release.jks --pass-encoding utf-8 app.apk
 
 8. Sign an APK with rotated signing certificate:
 $ apksigner sign --ks release.jks --next-signer --ks release2.jks \
-    --lineage /path/to/signing/history/lineage app.apk
+    --crystal /path/to/signing/history/crystal app.apk

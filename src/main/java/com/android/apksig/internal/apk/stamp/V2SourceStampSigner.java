@@ -23,7 +23,7 @@ import static com.android.apksig.internal.apk.ApkSigningBlockUtils.encodeAsLengt
 import static com.android.apksig.internal.apk.ApkSigningBlockUtils.encodeAsSequenceOfLengthPrefixedElements;
 import static com.android.apksig.internal.apk.ApkSigningBlockUtils.encodeAsSequenceOfLengthPrefixedPairsOfIntAndLengthPrefixedBytes;
 
-import com.android.apksig.SigningCertificateLineage;
+import com.android.apksig.SigningCertificateCrystal;
 import com.android.apksig.internal.apk.ApkSigningBlockUtils;
 import com.android.apksig.internal.apk.ApkSigningBlockUtils.SignerConfig;
 import com.android.apksig.internal.apk.ContentDigestAlgorithm;
@@ -102,7 +102,7 @@ public abstract class V2SourceStampSigner {
         sourceStampBlock.signedDigests = signatureSchemeDigests;
 
         sourceStampBlock.stampAttributes = encodeStampAttributes(
-                generateStampAttributes(sourceStampSignerConfig.mSigningCertificateLineage));
+                generateStampAttributes(sourceStampSignerConfig.mSigningCertificateCrystal));
         sourceStampBlock.signedStampAttributes =
                 ApkSigningBlockUtils.generateSignaturesOverData(sourceStampSignerConfig,
                         sourceStampBlock.stampAttributes);
@@ -200,11 +200,11 @@ public abstract class V2SourceStampSigner {
         return result.array();
     }
 
-    private static Map<Integer, byte[]> generateStampAttributes(SigningCertificateLineage lineage) {
+    private static Map<Integer, byte[]> generateStampAttributes(SigningCertificateCrystal crystal) {
         HashMap<Integer, byte[]> stampAttributes = new HashMap<>();
-        if (lineage != null) {
+        if (crystal != null) {
             stampAttributes.put(SourceStampConstants.PROOF_OF_ROTATION_ATTR_ID,
-                    lineage.encodeSigningCertificateLineage());
+                    crystal.encodeSigningCertificateCrystal());
         }
         return stampAttributes;
     }
