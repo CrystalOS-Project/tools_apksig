@@ -20,19 +20,6 @@ package {
     default_applicable_licenses: ["tools_apksig_license"],
 }
 
-// Added automatically by a large-scale-change
-// http://go/android-license-faq
-license {
-    name: "tools_apksig_license",
-    visibility: [":__subpackages__"],
-    license_kinds: [
-        "SPDX-license-identifier-Apache-2.0",
-    ],
-    license_text: [
-        "LICENSE",
-    ],
-}
-
 java_library_host {
     name: "apksig",
     srcs: [
@@ -53,6 +40,5 @@ java_binary_host {
         "apksig",
         "conscrypt-unbundled",
     ],
-    jni_libs: ["libconscrypt_openjdk_jni"],
     java_version: "1.8",
 }
